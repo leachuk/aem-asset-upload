@@ -1,0 +1,16 @@
+{
+  "name": "excel-parser",
+  "version": "1.0.0",
+  "description": "Test project for parsing excel spreadsheets with formulas and filters and outputting to csv",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^5.1.0",
+    "jmespath": "^0.15.0",
+    "xlsx": "^0.16.3"
+  }
+}
