@@ -9,6 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
+const winston = require('winston');
 
 function buildCharRegex(charArray) {
     let regex = '[';
@@ -36,4 +37,23 @@ module.exports.trimRight = function trimRight(toTrim, charArray) {
         return toTrim.replace(new RegExp(`${buildCharRegex(charArray)}*$`, 'g'), '');
     }
     return toTrim;
+}
+
+module.exports.getLogger = function getLogger(logFile) {
+    const { combine, timestamp, label, printf } = winston.format;
+    const myFormat = printf(({ level, message, label, timestamp }) => {
+        return `${timestamp} [${label}] ${level}: ${message}`;
+    });
+    const log = winston.createLogger({
+        format: combine(
+            label({ label: '' }),
+            timestamp(),
+            myFormat
+        ),
+        transports: [
+            new winston.transports.Console()
+            //new winston.transports.File({ filename: logFile }) // output to file
+        ]
+    });
+    return log;
 }
