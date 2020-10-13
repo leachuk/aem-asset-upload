@@ -61,9 +61,12 @@ class UploadCommand extends BaseCommand {
         log.info(csvData);
         const csvWriteSuccess = CsvParser.updateCell("sample.csv","B","2","New Value")
         log.info(`CSV write success: ${csvWriteSuccess}`)
+        log.info(`Outputting argv: ${argv}`);
 
-        log.info("Outputting argv:");
-        log.info(argv);
+        // todo: Extract all filenames, that aren't marked as currently uploaded, into an array for passing into the upload method.
+        //       Then, see if we can parse the returned `allUploadResult` for a list of successfully uploaded filenames,
+        //       and then update the csv file to mark these as successfully uploaded after the upload method.
+        //       Then test with a high volume of files!
         // fileUpload.upload(uploadOptions, argv).then((allUploadResult) => {
         //         log.info('finished uploading files');
         //         // generate html format result
