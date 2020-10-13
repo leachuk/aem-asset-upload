@@ -57,11 +57,14 @@ class UploadCommand extends BaseCommand {
         // upload local folder
         const fileUpload = new FileSystemUpload({ log });
         log.info("Parsing CSV:")
-        const csvData = CsvParser.readCsv("sample.csv");
+        const csvData = CsvParser.readCsv("sample.csv", "[?uploaded != 'true']");
         log.info(csvData);
-        const csvWriteSuccess = CsvParser.updateCell("sample.csv","B","2","New Value")
-        log.info(`CSV write success: ${csvWriteSuccess}`)
-        log.info(`Outputting argv: ${argv}`);
+        console.log(csvData);
+
+        // const csvWriteSuccess = CsvParser.updateCell("sample.csv","B","2","New Value")
+        // log.info(`CSV write success: ${csvWriteSuccess}`)
+        //
+        // log.info(`Outputting argv: ${argv}`);
 
         // todo: Extract all filenames, that aren't marked as currently uploaded, into an array for passing into the upload method.
         //       Then, see if we can parse the returned `allUploadResult` for a list of successfully uploaded filenames,

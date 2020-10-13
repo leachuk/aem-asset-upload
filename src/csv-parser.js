@@ -4,16 +4,17 @@ const jmespath = require('jmespath');
 const Utils = require('./utils');
 const log = Utils.getLogger();
 
-module.exports.readCsv = function readCsv(csvPath) {
+module.exports.readCsv = function readCsv(csvPath, jmessearch) {
 	if (csvPath) {
 		log.info(`csv file path: ${csvPath}`);
 
 		const workbook = XLSX.readFile(csvPath);
 
-		let json = XLSX.utils.sheet_to_json(workbook.Sheets.Sheet1, {header: 1, raw: true});
+		let json = XLSX.utils.sheet_to_json(workbook.Sheets.Sheet1, { defval: 'empty' });
 
 		//console.log("JSON output:" + JSON.stringify(json));
-		return json;
+		//return json;
+		return jmespath.search(json, jmessearch);
 	} else {
 		log.info("Error: Missing file path\n");
 	}
