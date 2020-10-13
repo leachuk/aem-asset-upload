@@ -61,6 +61,12 @@ class UploadCommand extends BaseCommand {
         log.info(csvData);
         console.log(csvData);
 
+        console.log("get filepath test:");
+        let object = csvData;
+        let result = object.map(function(x){
+            return x.filepath;
+        })
+        console.log(result);
         // const csvWriteSuccess = CsvParser.updateCell("sample.csv","B","2","New Value")
         // log.info(`CSV write success: ${csvWriteSuccess}`)
         //
