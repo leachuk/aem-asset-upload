@@ -64,13 +64,23 @@ class UploadCommand extends BaseCommand {
         console.log("Grouping test");
         const groupResult = Utils.groupByKey(csvData, 'aem_target_folder');
         console.log(groupResult);
+        for (var key in groupResult) {
+            if (groupResult.hasOwnProperty(key)) {
+                console.log(key + " -> " + groupResult[key]);
+                let result = groupResult[key].map(function(x){
+                    return x.filepath;
+                })
+                console.log(result);
+            }
+        }
 
-        console.log("get filepath test:");
-        let object = csvData;
-        let result = object.map(function(x){
-            return x.filepath;
-        })
-        console.log(result);
+        // console.log("get filepath test:");
+        // let object = csvData;
+        // let result = object.map(function(x){
+        //     return x.filepath;
+        // })
+        // console.log(result);
+
         // const csvWriteSuccess = CsvParser.updateCell("sample.csv","B","2","New Value")
         // log.info(`CSV write success: ${csvWriteSuccess}`)
         //
