@@ -57,3 +57,8 @@ module.exports.getLogger = function getLogger(logFile) {
     });
     return log;
 }
+
+module.exports.groupByKey = function groupByKey(list, key) {
+    const omitKey=true;
+    return list.reduce((hash, {[key]:value, ...rest}) => ({...hash, [value]:( hash[value] || [] ).concat(omitKey ? {...rest} : {[key]:value, ...rest})} ), {})
+}

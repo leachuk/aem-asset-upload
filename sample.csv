@@ -1,3 +1,4 @@
-﻿filepath,uploaded,md_metadata_1,md_metadata2
-foo.jpg,,foo metadata 1,foo metadata 2
-bar.png,,bar metadata 1,bar metadata 2
+﻿filepath,uploaded,aem_target_folder,md_metadata_1,md_metadata2
+foo.jpg,,/content/dam/sample-dev-data/auto-uploaded-1,foo metadata 1,foo metadata 2
+bar.png,,/content/dam/sample-dev-data/auto-uploaded-2,bar metadata 1,bar metadata 2
+foo-bar.jpg,,/content/dam/sample-dev-data/auto-uploaded-1,foo-bar metadata 1,foo-bar metadata 2

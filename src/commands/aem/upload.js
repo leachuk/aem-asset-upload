@@ -61,6 +61,10 @@ class UploadCommand extends BaseCommand {
         log.info(csvData);
         console.log(csvData);
 
+        console.log("Grouping test");
+        const groupResult = Utils.groupByKey(csvData, 'aem_target_folder');
+        console.log(groupResult);
+
         console.log("get filepath test:");
         let object = csvData;
         let result = object.map(function(x){
@@ -74,6 +78,7 @@ class UploadCommand extends BaseCommand {
 
         // todo: Extract all filenames, that aren't marked as currently uploaded, into an array for passing into the upload method.
         //       Then, see if we can parse the returned `allUploadResult` for a list of successfully uploaded filenames,
+        //       then sort the results into buckets of common target paths where they should be uploaded to, this will need to be added to `uploadOptions`,
         //       and then update the csv file to mark these as successfully uploaded after the upload method.
         //       Then test with a high volume of files!
         // fileUpload.upload(uploadOptions, argv).then((allUploadResult) => {
