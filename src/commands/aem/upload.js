@@ -25,6 +25,8 @@ const BaseCommand = require('../../base-command');
 const Utils = require('../../utils');
 const CsvParser = require('../../csv-parser');
 
+let test1 = [];
+
 class UploadCommand extends BaseCommand {
     async doRun(args) {
         const { flags, argv } = args;
@@ -46,31 +48,52 @@ class UploadCommand extends BaseCommand {
             threads,
         } = newFlags;
 
-        const uploadOptions = new DirectBinaryUploadOptions()
-            .withUrl(`${Utils.trimRight(host, ['/'])}${target}`)
-            .withBasicAuth(credential)
-            .withMaxConcurrent(parseInt(threads, 10));
-
         // setup logger
         const log = Utils.getLogger(logFile);
+
 
         // upload local folder
         const fileUpload = new FileSystemUpload({ log });
         log.info("Parsing CSV:")
-        const csvData = CsvParser.readCsv("sample.csv", "[?uploaded != 'true']");
-        log.info(csvData);
-        console.log(csvData);
+        const csvData = CsvParser.readCsv("sample.csv", "[?uploaded != 'true']"); //todo: replace `sample.csv` with argument variable
+        const groupData = Utils.groupByKey(csvData, 'aem_target_folder');
+        let index=0;
+        for (var key in groupData) {
+            let targetFolder = key;
+            if (groupData.hasOwnProperty(targetFolder)) {
+                let uploadOptions = new DirectBinaryUploadOptions()
+                    .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
+                    .withBasicAuth(credential)
+                    .withMaxConcurrent(parseInt(threads, 10));
 
-        console.log("Grouping test");
-        const groupResult = Utils.groupByKey(csvData, 'aem_target_folder');
-        console.log(groupResult);
-        for (var key in groupResult) {
-            if (groupResult.hasOwnProperty(key)) {
-                console.log(key + " -> " + groupResult[key]);
-                let result = groupResult[key].map(function(x){
+                log.info(targetFolder + " -> " + groupData[targetFolder]);
+                let uploadFiles = groupData[targetFolder].map(function(x){
                     return x.filepath;
                 })
-                console.log(result);
+                log.info(uploadFiles);
+
+                // await this.a().then(function (result) {
+                //     console.log("A COMPLETED:" + result);
+                //     test1.push({sdfsdf: result + index});
+                //     index++;
+                // });
+
+                await fileUpload.upload(uploadOptions, uploadFiles).then((uploadResult) => {
+
+                        log.info('finished uploading files');
+                        let jsonResult = uploadResult.toJSON();
+                        jsonResult.index = index;
+                        jsonResult.targetFolder = targetFolder;
+                        jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
+                        test1.push(jsonResult);
+                        index++;
+
+                    })
+                    .catch(err => {
+                        log.error('unhandled exception attempting to upload files', err);
+                    });
+
+
             }
         }
 
@@ -91,19 +114,33 @@ class UploadCommand extends BaseCommand {
         //       then sort the results into buckets of common target paths where they should be uploaded to, this will need to be added to `uploadOptions`,
         //       and then update the csv file to mark these as successfully uploaded after the upload method.
         //       Then test with a high volume of files!
-        // fileUpload.upload(uploadOptions, argv).then((allUploadResult) => {
-        //         log.info('finished uploading files');
-        //         // generate html format result
-        //         let mstTemplate = fs.readFileSync(Path.join(__dirname, '../../../view/result.mst')).toString();
-        //         let htmlOutput = mustache.render(mstTemplate, allUploadResult.toJSON());
-        //         fs.writeFileSync(htmlResult, htmlOutput);
-        //         log.info(`Uploading result is saved to html file '${htmlResult}'`);
-        //     })
-        //     .catch(err => {
-        //         log.error('unhandled exception attempting to upload files', err);
-        //     });
+
 
         log.info(`Log file is saved to log file '${logFile}'`);
+    }
+
+    async foo(args) {
+        //let test1 = [{host: "foo"},{host: "bar"}]
+        console.log("FOOOOO!:");
+        //console.log(JSON.stringify(test1));
+        console.log(test1);
+        // generate html format result
+        let uploadTimestamp = new Date().getTime();
+        let htmlResultFilename = `result-${uploadTimestamp}.html`;
+        let mstTemplate = fs.readFileSync(Path.join(__dirname, '../../../view/result.mst')).toString();
+
+        let htmlOutput = mustache.render(mstTemplate, test1);
+        fs.writeFileSync(htmlResultFilename, htmlOutput);
+        log.info(`Uploading result is saved to html file '${htmlResultFilename}'`);
+    }
+
+    a() {
+        return new Promise(function(resolve) {
+            setTimeout(function() {
+                console.log('a');
+                resolve('fffff');
+            }, 500)
+        });
     }
 }
 
@@ -158,7 +195,7 @@ UploadCommand.strict = false
 
 UploadCommand.args = [{
     name: 'files_folders',
-    required: true,
+    required: false,
     description: `Space-delimited list of files and folders to upload.`
 }];
 

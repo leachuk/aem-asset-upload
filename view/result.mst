@@ -8,7 +8,9 @@
 </head>
 
 <body>
-    <h1>Overall result</h1>
+{{#.}}
+    <h1>[{{index}}] Results for target folder: {{targetFolder}}</h1>
+    <h2>Overall result</h2>
     <table class="pure-table">
         <thead>
             <tr>
@@ -18,7 +20,7 @@
                 <th>Total File Size</th>
                 <th>Average File Size</th>
 
-                <th>Total Spent Time(ms)</th>
+                <th>Total Spent Time</th>
 
                 <th>Init Upload Spent(Once)(ms)</th>
                 <th>Average Upload Spent Per Asset(ms)</th>
@@ -36,7 +38,7 @@
                 <td>{{totalFileSize}}</td>
                 <td>{{avgFileSize}}</td>
 
-                <td>{{finalSpent}}</td>
+                <td>{{finalSpentHumanTime}}</td>
 
                 <td>{{initSpent}}</td>
                 <td>{{avgPutSpent}}</td>
@@ -46,7 +48,7 @@
         </tbody>
     </table>
 
-    <h1>Detailed result</h1>
+    <h2>Detailed result</h2>
 
     <table class="pure-table">
         <thead>
@@ -85,5 +87,6 @@
             {{/detailedResult}}
         </tbody>
     </table>
+{{/.}}
 </body>
 </html>

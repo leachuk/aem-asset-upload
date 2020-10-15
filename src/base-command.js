@@ -13,10 +13,14 @@ const {Command, flags} = require('@oclif/command')
 
 class BaseCommand extends Command {
   async run() {
-    return this.doRun(this.parse());
+    return this.doRun(this.parse()).then(this.foo);
   }
 
   async doRun(/* args */) {
+
+  }
+
+  async foo() {
 
   }
 }
