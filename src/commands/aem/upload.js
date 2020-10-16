@@ -25,7 +25,7 @@ const BaseCommand = require('../../base-command');
 const Utils = require('../../utils');
 const CsvParser = require('../../csv-parser');
 
-let test1 = [];
+let uploadReportData = [];
 
 class UploadCommand extends BaseCommand {
     async doRun(args) {
@@ -56,24 +56,11 @@ class UploadCommand extends BaseCommand {
         const fileUpload = new FileSystemUpload({ log });
         //log.info("Parsing CSV:")
         const csvData = CsvParser.readCsv("sample.csv", "[?uploaded != 'true']"); //todo: replace `sample.csv` with argument variable
+        if (csvData <= 0) {
+            log.info("No results returned from the CSV file. All items may have been flagged as uploaded");
+        }
         const groupData = Utils.groupByKey(csvData, 'aem_target_folder');
         let index=0;
-
-        // const promises = groupData.map(function(file){
-        //     console.log(file);
-        // });
-
-
-
-        //serial
-        // for (const x of bar) {
-        //     await this.a(x);
-        // }
-        //output:
-        // a:4000
-        // a:1000
-        // a:1000
-        // END!!
 
         for (let key in groupData) {
             let targetFolder = key;
@@ -87,13 +74,6 @@ class UploadCommand extends BaseCommand {
                 let uploadFiles = groupData[targetFolder].map(function(x){
                     return x.filepath;
                 })
-                //log.info(uploadFiles);
-
-                // await this.a().then(function (result) {
-                //     console.log("A COMPLETED:" + result + index);
-                //     test1.push({sdfsdf: result + index});
-                //     index++;
-                // });
 
                 //parallel
                 const promises = [...Array(1)].map(files =>
@@ -103,12 +83,12 @@ class UploadCommand extends BaseCommand {
                         jsonResult.index = index;
                         jsonResult.targetFolder = targetFolder;
                         jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
-                        test1.push(jsonResult);
+                        uploadReportData.push(jsonResult);
 
                         //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
-                        // groupData[targetFolder].map(function(file){
-                        //     CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
-                        // })
+                        groupData[targetFolder].map(function(file){
+                            CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
+                        })
 
                     })
                     .catch(err => {
@@ -116,73 +96,28 @@ class UploadCommand extends BaseCommand {
                     })
                 );
                 const result = await Promise.all(promises);
-                let testReturn = [];
                 result.forEach(x => {
-                    console.log("returning: "+ JSON.stringify(x));
-                    testReturn.push(x);
+                    log.info("Completed Upload");
                 });
-
-                // await fileUpload.upload(uploadOptions, uploadFiles).then((uploadResult) => {
-                //     log.info('finished uploading files');
-                //     let jsonResult = uploadResult.toJSON();
-                //     jsonResult.index = index;
-                //     jsonResult.targetFolder = targetFolder;
-                //     jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
-                //     test1.push(jsonResult);
-                //
-                //     //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
-                //     groupData[targetFolder].map(function(file){
-                //         CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
-                //     })
-                //
-                // })
-                // .catch(err => {
-                //     log.error('unhandled exception attempting to upload files', err);
-                // });
 
                 index++;
 
             }
         }
 
-        //this.foo(testReturn);
-        console.log("END!!")
-
-        // console.log("get filepath test:");
-        // let object = csvData;
-        // let result = object.map(function(x){
-        //     return x.filepath;
-        // })
-        // console.log(result);
-
-        // const csvWriteSuccess = CsvParser.updateCell("sample.csv","B","2","New Value")
-        // log.info(`CSV write success: ${csvWriteSuccess}`)
-        //
-        // log.info(`Outputting argv: ${argv}`);
-
-        // todo: Extract all filenames, that aren't marked as currently uploaded, into an array for passing into the upload method.
-        //       Then, see if we can parse the returned `allUploadResult` for a list of successfully uploaded filenames,
-        //       then sort the results into buckets of common target paths where they should be uploaded to, this will need to be added to `uploadOptions`,
-        //       and then update the csv file to mark these as successfully uploaded after the upload method.
-        //       Then test with a high volume of files!
-
-
-        log.info(`Log file is saved to log file '${logFile}'`);
+        this.generateReport(uploadReportData);
+        log.info("END!!")
+        //log.info(`Log file is saved to log file '${logFile}'`);
     }
 
-    foo(args) {
-        //let test1 = [{host: "foo"},{host: "bar"}]
-        console.log("FOOOOO!:");
-        //console.log(JSON.stringify(test1));
-        console.log(args);
+    generateReport(data) {
         // generate html format result
-        // let uploadTimestamp = new Date().getTime();
-        // let htmlResultFilename = `result-${uploadTimestamp}.html`;
-        // let mstTemplate = fs.readFileSync(Path.join(__dirname, '../../../view/result.mst')).toString();
-        //
-        // let htmlOutput = mustache.render(mstTemplate, test1);
-        // fs.writeFileSync(htmlResultFilename, htmlOutput);
-        // log.info(`Uploading result is saved to html file '${htmlResultFilename}'`);
+        let uploadTimestamp = new Date().getTime();
+        let htmlResultFilename = `result-${uploadTimestamp}.html`;
+        let mstTemplate = fs.readFileSync(Path.join(__dirname, '../../../view/result.mst')).toString();
+
+        let htmlOutput = mustache.render(mstTemplate, data);
+        fs.writeFileSync(htmlResultFilename, htmlOutput);
     }
     b(delay) {
         return (new Promise(resolve => {setTimeout(() => resolve(delay), delay)}))

@@ -106,3 +106,4 @@ dist
 .idea/
 /sample-photo.jpg
 .DS_Store
+/result-*.html
