@@ -12,11 +12,23 @@ module.exports.readCsv = function readCsv(csvPath, jmessearch) {
 
 		let json = XLSX.utils.sheet_to_json(workbook.Sheets.Sheet1, { defval: 'empty' });
 
+		Object.entries(json).forEach(function([key,value],index) {
+			console.log(value)
+			value.csvRowNum = value.__rowNum__;
+		})
+
 		//console.log("JSON output:" + JSON.stringify(json));
 		//return json;
 		return jmespath.search(json, jmessearch);
 	} else {
 		log.info("Error: Missing file path\n");
+	}
+}
+
+//hardcoded utility function for dealing with the specific format of our csv
+module.exports.setUploadedCell = function setUploadedCell(csvPath, row) {
+	if (csvPath) {
+		this.updateCell(csvPath, "B", row + 1, "true"); //row + 1 so offset from the heading row
 	}
 }
 

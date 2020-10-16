@@ -58,7 +58,7 @@ class UploadCommand extends BaseCommand {
         const csvData = CsvParser.readCsv("sample.csv", "[?uploaded != 'true']"); //todo: replace `sample.csv` with argument variable
         const groupData = Utils.groupByKey(csvData, 'aem_target_folder');
         let index=0;
-        for (var key in groupData) {
+        for (let key in groupData) {
             let targetFolder = key;
             if (groupData.hasOwnProperty(targetFolder)) {
                 let uploadOptions = new DirectBinaryUploadOptions()
@@ -79,20 +79,24 @@ class UploadCommand extends BaseCommand {
                 // });
 
                 await fileUpload.upload(uploadOptions, uploadFiles).then((uploadResult) => {
+                    log.info('finished uploading files');
+                    let jsonResult = uploadResult.toJSON();
+                    jsonResult.index = index;
+                    jsonResult.targetFolder = targetFolder;
+                    jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
+                    test1.push(jsonResult);
 
-                        log.info('finished uploading files');
-                        let jsonResult = uploadResult.toJSON();
-                        jsonResult.index = index;
-                        jsonResult.targetFolder = targetFolder;
-                        jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
-                        test1.push(jsonResult);
-                        index++;
-
+                    //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
+                    groupData[targetFolder].map(function(file){
+                        CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
                     })
-                    .catch(err => {
-                        log.error('unhandled exception attempting to upload files', err);
-                    });
 
+                })
+                .catch(err => {
+                    log.error('unhandled exception attempting to upload files', err);
+                });
+
+                index++;
 
             }
         }
