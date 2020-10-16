@@ -69,6 +69,9 @@ class UploadCommand extends BaseCommand {
         //parallel
         const promises = bar.map(this.a);
         const result = await Promise.all(promises);
+        setTimeout(function(){
+            console.log("Delay over.")
+        },1000);
         result.forEach(x => console.log("returning: "+x));
 
         //serial
@@ -81,8 +84,8 @@ class UploadCommand extends BaseCommand {
         // a:1000
         // END!!
 
-
-            console.log("END!!")
+        this.foo();
+        console.log("END!!")
 
     //     for (let key in groupData) {
     //         let targetFolder = key;
