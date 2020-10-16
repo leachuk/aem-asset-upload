@@ -59,20 +59,11 @@ class UploadCommand extends BaseCommand {
         const groupData = Utils.groupByKey(csvData, 'aem_target_folder');
         let index=0;
 
-        const bar = [
-            "4000",
-            "1000",
-            "1000"
-        ];
-        //bar.push(groupData);
+        // const promises = groupData.map(function(file){
+        //     console.log(file);
+        // });
 
-        //parallel
-        const promises = bar.map(this.a);
-        const result = await Promise.all(promises);
-        setTimeout(function(){
-            console.log("Delay over.")
-        },1000);
-        result.forEach(x => console.log("returning: "+x));
+
 
         //serial
         // for (const x of bar) {
@@ -84,78 +75,106 @@ class UploadCommand extends BaseCommand {
         // a:1000
         // END!!
 
-        this.foo();
+        for (let key in groupData) {
+            let targetFolder = key;
+            if (groupData.hasOwnProperty(targetFolder)) {
+                let uploadOptions = new DirectBinaryUploadOptions()
+                    .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
+                    .withBasicAuth(credential)
+                    .withMaxConcurrent(parseInt(threads, 10));
+
+                log.info(targetFolder + " -> " + groupData[targetFolder]);
+                let uploadFiles = groupData[targetFolder].map(function(x){
+                    return x.filepath;
+                })
+                //log.info(uploadFiles);
+
+                // await this.a().then(function (result) {
+                //     console.log("A COMPLETED:" + result + index);
+                //     test1.push({sdfsdf: result + index});
+                //     index++;
+                // });
+
+                //parallel
+                const promises = [...Array(1)].map(files =>
+                    fileUpload.upload(uploadOptions, uploadFiles).then((uploadResult) => {
+                        log.info('finished uploading files');
+                        let jsonResult = uploadResult.toJSON();
+                        jsonResult.index = index;
+                        jsonResult.targetFolder = targetFolder;
+                        jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
+                        test1.push(jsonResult);
+
+                        //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
+                        // groupData[targetFolder].map(function(file){
+                        //     CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
+                        // })
+
+                    })
+                    .catch(err => {
+                        log.error('unhandled exception attempting to upload files', err);
+                    })
+                );
+                const result = await Promise.all(promises);
+                let testReturn = [];
+                result.forEach(x => {
+                    console.log("returning: "+ JSON.stringify(x));
+                    testReturn.push(x);
+                });
+
+                // await fileUpload.upload(uploadOptions, uploadFiles).then((uploadResult) => {
+                //     log.info('finished uploading files');
+                //     let jsonResult = uploadResult.toJSON();
+                //     jsonResult.index = index;
+                //     jsonResult.targetFolder = targetFolder;
+                //     jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
+                //     test1.push(jsonResult);
+                //
+                //     //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
+                //     groupData[targetFolder].map(function(file){
+                //         CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
+                //     })
+                //
+                // })
+                // .catch(err => {
+                //     log.error('unhandled exception attempting to upload files', err);
+                // });
+
+                index++;
+
+            }
+        }
+
+        //this.foo(testReturn);
         console.log("END!!")
 
-    //     for (let key in groupData) {
-    //         let targetFolder = key;
-    //         if (groupData.hasOwnProperty(targetFolder)) {
-    //             let uploadOptions = new DirectBinaryUploadOptions()
-    //                 .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
-    //                 .withBasicAuth(credential)
-    //                 .withMaxConcurrent(parseInt(threads, 10));
-    //
-    //             log.info(targetFolder + " -> " + groupData[targetFolder]);
-    //             let uploadFiles = groupData[targetFolder].map(function(x){
-    //                 return x.filepath;
-    //             })
-    //             log.info(uploadFiles);
-    //
-    //             await this.a().then(function (result) {
-    //                 console.log("A COMPLETED:" + result + index);
-    //                 test1.push({sdfsdf: result + index});
-    //                 index++;
-    //             });
-    //
-    //             // await fileUpload.upload(uploadOptions, uploadFiles).then((uploadResult) => {
-    //             //     log.info('finished uploading files');
-    //             //     let jsonResult = uploadResult.toJSON();
-    //             //     jsonResult.index = index;
-    //             //     jsonResult.targetFolder = targetFolder;
-    //             //     jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
-    //             //     test1.push(jsonResult);
-    //             //
-    //             //     //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
-    //             //     groupData[targetFolder].map(function(file){
-    //             //         CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
-    //             //     })
-    //             //
-    //             // })
-    //             // .catch(err => {
-    //             //     log.error('unhandled exception attempting to upload files', err);
-    //             // });
-    //
-    //             //index++;
-    //
-    //         }
-    //     }
-    //     // console.log("get filepath test:");
-    //     // let object = csvData;
-    //     // let result = object.map(function(x){
-    //     //     return x.filepath;
-    //     // })
-    //     // console.log(result);
-    //
-    //     // const csvWriteSuccess = CsvParser.updateCell("sample.csv","B","2","New Value")
-    //     // log.info(`CSV write success: ${csvWriteSuccess}`)
-    //     //
-    //     // log.info(`Outputting argv: ${argv}`);
-    //
-    //     // todo: Extract all filenames, that aren't marked as currently uploaded, into an array for passing into the upload method.
-    //     //       Then, see if we can parse the returned `allUploadResult` for a list of successfully uploaded filenames,
-    //     //       then sort the results into buckets of common target paths where they should be uploaded to, this will need to be added to `uploadOptions`,
-    //     //       and then update the csv file to mark these as successfully uploaded after the upload method.
-    //     //       Then test with a high volume of files!
-    //
-    //
-    //     log.info(`Log file is saved to log file '${logFile}'`);
+        // console.log("get filepath test:");
+        // let object = csvData;
+        // let result = object.map(function(x){
+        //     return x.filepath;
+        // })
+        // console.log(result);
+
+        // const csvWriteSuccess = CsvParser.updateCell("sample.csv","B","2","New Value")
+        // log.info(`CSV write success: ${csvWriteSuccess}`)
+        //
+        // log.info(`Outputting argv: ${argv}`);
+
+        // todo: Extract all filenames, that aren't marked as currently uploaded, into an array for passing into the upload method.
+        //       Then, see if we can parse the returned `allUploadResult` for a list of successfully uploaded filenames,
+        //       then sort the results into buckets of common target paths where they should be uploaded to, this will need to be added to `uploadOptions`,
+        //       and then update the csv file to mark these as successfully uploaded after the upload method.
+        //       Then test with a high volume of files!
+
+
+        log.info(`Log file is saved to log file '${logFile}'`);
     }
 
     foo(args) {
         //let test1 = [{host: "foo"},{host: "bar"}]
         console.log("FOOOOO!:");
         //console.log(JSON.stringify(test1));
-        console.log(test1);
+        console.log(args);
         // generate html format result
         // let uploadTimestamp = new Date().getTime();
         // let htmlResultFilename = `result-${uploadTimestamp}.html`;
@@ -169,13 +188,13 @@ class UploadCommand extends BaseCommand {
         return (new Promise(resolve => {setTimeout(() => resolve(delay), delay)}))
             .then(d => `Waited ${d} seconds`);
     }
-    a(args) {
+    a(args,options) {
         return new Promise(function(resolve) {
             setTimeout(function(args) {
                 resolve(args);
             }, 2000)
         }).then(function(){
-            return 'a:' + args;
+            return {a: args, b: options};
         });
     }
 }
