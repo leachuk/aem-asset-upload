@@ -13,7 +13,7 @@ module.exports.readCsv = function readCsv(csvPath, jmessearch) {
 		let json = XLSX.utils.sheet_to_json(workbook.Sheets.Sheet1, { defval: 'empty' });
 
 		Object.entries(json).forEach(function([key,value],index) {
-			console.log(value)
+			//console.log(value)
 			value.csvRowNum = value.__rowNum__;
 		})
 
@@ -48,7 +48,7 @@ module.exports.updateCell = function updateCell(csvPath, col, row, value) {
 
 		if (worksheet[cellId]) {
 			let cell = worksheet[cellId].v;
-			log.info(cell);
+			//log.info(cell);
 		}
 
 		// modify value in D4
