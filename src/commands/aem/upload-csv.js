@@ -24,6 +24,7 @@ const {
 const BaseCommand = require('../../base-command');
 const Utils = require('../../utils');
 const CsvParser = require('../../csv-parser');
+const AemApi = require('../../aem-rest-api');
 
 let uploadReportData = [];
 
@@ -51,6 +52,10 @@ class UploadCommand extends BaseCommand {
         // setup logger
         const log = Utils.getLogger(logFile);
 
+        // init AEM API
+        const username = credential.split(":")[0];
+        const password = credential.split(":")[1];
+        const aemApi = new AemApi(host, username, password);
 
         // upload local folder
         const fileUpload = new FileSystemUpload({ log });
@@ -76,7 +81,7 @@ class UploadCommand extends BaseCommand {
                 })
 
                 //parallel
-                const promises = [...Array(1)].map(files =>
+                const promises = [...Array(1)].map(files => //force 1 call by defining an array of size 1
                     fileUpload.upload(uploadOptions, uploadFiles).then((uploadResult) => {
                         log.info('finished uploading files');
                         let jsonResult = uploadResult.toJSON();
@@ -86,8 +91,19 @@ class UploadCommand extends BaseCommand {
                         uploadReportData.push(jsonResult);
 
                         //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
-                        groupData[targetFolder].map(function(file){
+                        groupData[targetFolder].map(function(file) {
                             CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
+
+                            //update metadata in AEM on successful upload
+                            let filename = Path.basename(file.filepath);
+                            let { filepath, uploaded, aem_target_folder, csvRowNum, ...metadata } = file; //remove the non-metadata fields
+                            let aemMetadata = {class: 'asset', properties: { metadata: metadata}}; //add required AEM Asset API data
+                            let aemApiFileNamePath = targetFolder.replace('/content/dam', '/api/assets') + '/' + filename;
+                            log.info("AEM Metadata with CSV extracted data");
+                            log.info(aemMetadata)
+                            aemApi.put(aemApiFileNamePath, aemMetadata).then(response => {
+                            	console.log(response.data);
+                            });
                         })
 
                     })

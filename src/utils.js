@@ -88,3 +88,24 @@ module.exports.convertMs = function convertMs(milliseconds, format) {
             return `h: ${total_hours}, m: ${total_minutes}, s: ${total_seconds} `;
     }
 };
+
+module.exports.pathToJson = function pathToJson(data) {
+    const output = {};
+    let current;
+
+    for (const path of data) {
+        current = output;
+
+        for (const segment of path.split('/')) {
+            if (segment !== '') {
+                if (!(segment in current)) {
+                    current[segment] = {};
+                }
+
+                current = current[segment];
+            }
+        }
+    }
+
+    return output;
+}
