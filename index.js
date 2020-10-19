@@ -16,12 +16,15 @@ if (program.aemHost) {
 		const username = program.credentials.split(":")[0];
 		const password = program.credentials.split(":")[1];
 		const aemApi = new AemApi(program.aemHost, username, password);
-		//aemApi.get('/api/assets/sample-dev-data/auto-uploaded-1.json');
+		aemApi.get('/api/assets/sample-dev-data/auto-uploaded-1.json').then(response => {
+			console.log("GET RESULT:");
+			console.log(response);
+		});
 
 		let metadata = {class: 'asset', properties: {'jcr:title': 'updated title by API 2', metadata: {purpose: ['fly-through','animation'], custom: 'foo'} }};
-		aemApi.put('/api/assets/sample-dev-data/auto-uploaded-1/sample-photo.jpg', metadata).then(result => {
+		aemApi.put('/api/assets/sample-dev-data/auto-uploaded-1/sample-photo.jpg', metadata).then(response => {
 			console.log("PUT RESULT:");
-			console.log(result.data);
+			console.log(response.data);
 		});
 	})();
 
