@@ -18,8 +18,11 @@ if (program.aemHost) {
 		const aemApi = new AemApi(program.aemHost, username, password);
 		//aemApi.get('/api/assets/sample-dev-data/auto-uploaded-1.json');
 
-		let metadata = {class: 'asset', properties: {'jcr:title': 'updated title by API 2'}};
-		aemApi.put('/api/assets/sample-dev-data/auto-uploaded-1/sample-photo.jpg', metadata);
+		let metadata = {class: 'asset', properties: {'jcr:title': 'updated title by API 2', metadata: {purpose: ['fly-through','animation'], custom: 'foo'} }};
+		aemApi.put('/api/assets/sample-dev-data/auto-uploaded-1/sample-photo.jpg', metadata).then(result => {
+			console.log("PUT RESULT:");
+			console.log(result.data);
+		});
 	})();
 
 } else {

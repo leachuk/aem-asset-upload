@@ -17,16 +17,14 @@ class AemRestApi {
 
     post(url, data) {
         _request('post', this.hostname+url, this.username, this.password, data).then(function (response) {
-            console.log(response.data);
+            //console.log(response.data);
         }).catch(function (error) {
             console.log(error);
         });
     }
 
     put(url, data) {
-        _request('put', this.hostname+url, this.username, this.password, data).then(function (response) {
-            console.log(response.data);
-        }).catch(function (error) {
+        return _request('put', this.hostname+url, this.username, this.password, data).catch(function (error) {
             console.log(error);
         });
     }
