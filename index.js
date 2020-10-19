@@ -16,8 +16,10 @@ if (program.aemHost) {
 		const username = program.credentials.split(":")[0];
 		const password = program.credentials.split(":")[1];
 		const aemApi = new AemApi(program.aemHost, username, password);
-		aemApi.get('/api/assets/sample-dev-data/auto-uploaded-1.json');
+		//aemApi.get('/api/assets/sample-dev-data/auto-uploaded-1.json');
 
+		let metadata = {class: 'asset', properties: {'jcr:title': 'updated title by API 2'}};
+		aemApi.put('/api/assets/sample-dev-data/auto-uploaded-1/sample-photo.jpg', metadata);
 	})();
 
 } else {
