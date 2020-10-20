@@ -81,9 +81,8 @@ class UploadCommand extends BaseCommand {
                     return x.filepath;
                 })
 
-                //parallel
-                const promises = [...Array(1)].map(files => //force 1 call by defining an array of size 1
-                    fileUpload.upload(uploadOptions, uploadFiles).then((uploadResult) => {
+                const promises = uploadFiles.map(files => //force 1 call by defining an array of size 1
+                    fileUpload.upload(uploadOptions, [files]).then((uploadResult) => {
                         log.info('finished uploading files');
                         let jsonResult = uploadResult.toJSON();
                         jsonResult.index = index;
@@ -113,15 +112,15 @@ class UploadCommand extends BaseCommand {
                             }
 
                         })
-
+                        return jsonResult;
                     })
                     .catch(err => {
                         log.error('unhandled exception attempting to upload files', err);
                     })
                 );
                 const result = await Promise.all(promises);
-                result.forEach(x => {
-                    log.info("Completed Upload");
+                result.forEach(uploadResult => {
+                    log.info(`Completed Upload of ${uploadResult.detailedResult[0].fileName} to ${uploadResult.targetFolder}`);
                 });
 
                 index++;
