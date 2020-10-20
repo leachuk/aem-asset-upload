@@ -47,6 +47,7 @@ class UploadCommand extends BaseCommand {
             log: logFile,
             output: htmlResult,
             threads,
+            inputcsv,
         } = newFlags;
 
         // setup logger
@@ -59,8 +60,8 @@ class UploadCommand extends BaseCommand {
 
         // upload local folder
         const fileUpload = new FileSystemUpload({ log });
-        //log.info("Parsing CSV:")
-        const csvData = CsvParser.readCsv("sample.csv", "[?uploaded != 'true']"); //todo: replace `sample.csv` with argument variable
+        log.info(`Using input CSV file: ${inputcsv}`);
+        const csvData = CsvParser.readCsv(inputcsv, "[?uploaded != 'true']");
         if (csvData <= 0) {
             log.info("No results returned from the CSV file. All items may have been flagged as uploaded");
         }
@@ -117,12 +118,13 @@ class UploadCommand extends BaseCommand {
                 });
 
                 index++;
-
             }
         }
 
-        this.generateReport(uploadReportData);
-        log.info("END!!")
+        if (uploadReportData.length > 0) {
+            this.generateReport(uploadReportData);
+        }
+        log.info("END!")
         //log.info(`Log file is saved to log file '${logFile}'`);
     }
 
@@ -194,7 +196,13 @@ saved in html format.`,
         description: `Maximum threads
 Maximum number of files to upload concurrently.`,
         default: 5,
-    })
+    }),
+    inputcsv: flags.string({
+        char: 'i',
+        description: `Path to the CSV file used for input of files and metadata to upload. 
+For example, an absolute path /foo/bar/sample.csv or a relative path sample.csv`,
+        default: 'sample.csv'
+    }),
 })
 
 UploadCommand.strict = false

@@ -95,13 +95,11 @@ module.exports.pathToJson = function pathToJson(data) {
 
     for (const path of data) {
         current = output;
-
         for (const segment of path.split('/')) {
             if (segment !== '') {
                 if (!(segment in current)) {
                     current[segment] = {};
                 }
-
                 current = current[segment];
             }
         }
