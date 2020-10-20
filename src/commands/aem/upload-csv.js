@@ -93,18 +93,25 @@ class UploadCommand extends BaseCommand {
 
                         //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
                         groupData[targetFolder].map(function(file) {
-                            CsvParser.setUploadedCell("sample.csv", file.csvRowNum);
+                            CsvParser.setUploadedCell(inputcsv, file.csvRowNum);
 
                             //update metadata in AEM on successful upload
                             let filename = Path.basename(file.filepath);
                             let { filepath, uploaded, aem_target_folder, csvRowNum, ...metadata } = file; //remove the non-metadata fields
-                            let aemMetadata = {class: 'asset', properties: { metadata: metadata}}; //add required AEM Asset API data
-                            let aemApiFileNamePath = targetFolder.replace('/content/dam', '/api/assets') + '/' + filename;
-                            log.info("AEM Metadata with CSV extracted data");
-                            log.info(aemMetadata)
-                            aemApi.put(aemApiFileNamePath, aemMetadata).then(response => {
-                            	console.log(response.data);
-                            });
+                            let filteredMetadata = CsvParser.filterEmpty(metadata);
+                            //if metadata is not empty
+                            if (Object.keys(filteredMetadata).length !== 0 && filteredMetadata.constructor === Object) {
+                                let aemMetadata = {class: 'asset', properties: { metadata: filteredMetadata}}; //add required AEM Asset API data
+                                // Remove any metadata fields which have an "empty" value
+                                let aemApiFileNamePath = targetFolder.replace('/content/dam', '/api/assets') + '/' + filename;
+                                log.info("AEM Metadata with CSV extracted data");
+                                log.info(JSON.stringify(aemMetadata));
+                                aemApi.put(aemApiFileNamePath, aemMetadata).then(response => {
+                                    log.info("Completed AEM Metadata update. Response data:");
+                                    log.info(response.data);
+                                });
+                            }
+
                         })
 
                     })
@@ -137,19 +144,7 @@ class UploadCommand extends BaseCommand {
         let htmlOutput = mustache.render(mstTemplate, data);
         fs.writeFileSync(htmlResultFilename, htmlOutput);
     }
-    b(delay) {
-        return (new Promise(resolve => {setTimeout(() => resolve(delay), delay)}))
-            .then(d => `Waited ${d} seconds`);
-    }
-    a(args,options) {
-        return new Promise(function(resolve) {
-            setTimeout(function(args) {
-                resolve(args);
-            }, 2000)
-        }).then(function(){
-            return {a: args, b: options};
-        });
-    }
+
 }
 
 UploadCommand.flags = Object.assign({}, BaseCommand.flags, {

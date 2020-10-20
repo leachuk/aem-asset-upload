@@ -55,3 +55,13 @@ module.exports.updateCell = function updateCell(csvPath, col, row, value) {
 		return true;
 	}
 }
+
+module.exports.filterEmpty = function filterEmpty(object) {
+	const obj = {};
+	for (const key in object) {
+		if (object[key] && object[key] !== "empty") {
+			obj[key] = object[key];
+		}
+	}
+	return obj;
+}
