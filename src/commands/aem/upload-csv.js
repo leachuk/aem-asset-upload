@@ -81,24 +81,31 @@ class UploadCommand extends BaseCommand {
                     return x.filepath;
                 })
 
+                let jsonResult = {};
                 const promises = uploadFiles.map(files => //force 1 call by defining an array of size 1
-                    fileUpload.upload(uploadOptions, [files]).then((uploadResult) => {
+                     fileUpload.upload(uploadOptions, [files]).then((uploadResult) => {
                         log.info('finished uploading files');
-                        let jsonResult = uploadResult.toJSON();
+                        jsonResult = uploadResult.toJSON();
                         jsonResult.index = index;
                         jsonResult.targetFolder = targetFolder;
                         jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
                         uploadReportData.push(jsonResult);
 
-                        //update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
-                        groupData[targetFolder].map(function(file) {
-                            CsvParser.setUploadedCell(inputcsv, file.csvRowNum);
+                        // update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
 
-                            //update metadata in AEM on successful upload
-                            let filename = Path.basename(file.filepath);
-                            let { filepath, uploaded, aem_target_folder, csvRowNum, ...metadata } = file; //remove the non-metadata fields
+                        return jsonResult.detailedResult.map(function(file) {
+                            let dataindex = csvData.findIndex(function (o) {
+                                let filename = Path.basename(o.filepath);
+                                return file.fileName == filename && o.aem_target_folder == targetFolder;
+                            })
+
+                            CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+
+                            // Update metadata in AEM on successful upload
+                            let filename = file.fileName;
+                            let { filepath, uploaded, aem_target_folder, csvRowNum, ...metadata } = csvData[dataindex]; //remove the non-metadata fields
                             let filteredMetadata = CsvParser.filterEmpty(metadata);
-                            //if metadata is not empty
+                            // if metadata is not empty, massage it to fit the AEM Asset api and submit
                             if (Object.keys(filteredMetadata).length !== 0 && filteredMetadata.constructor === Object) {
                                 let aemMetadata = {class: 'asset', properties: { metadata: filteredMetadata}}; //add required AEM Asset API data
                                 // Remove any metadata fields which have an "empty" value
@@ -107,22 +114,23 @@ class UploadCommand extends BaseCommand {
                                 log.info(JSON.stringify(aemMetadata));
                                 aemApi.put(aemApiFileNamePath, aemMetadata).then(response => {
                                     log.info("Completed AEM Metadata update. Response data:");
-                                    log.info(response.data);
+                                    log.info(JSON.stringify(response.data.properties));
                                 });
                             }
-
+                            return file;
                         })
-                        return jsonResult;
-                    })
-                    .catch(err => {
+
+                    }).catch(err => {
                         log.error('unhandled exception attempting to upload files', err);
                     })
-                );
-                const result = await Promise.all(promises);
-                result.forEach(uploadResult => {
-                    log.info(`Completed Upload of ${uploadResult.detailedResult[0].fileName} to ${uploadResult.targetFolder}`);
-                });
 
+                );
+                await Promise.all(promises).then(file => {
+                        file.forEach(uploadResult => {
+                            log.info(`Completed Upload to ${uploadResult[0].targetPath}`);
+                        })
+                    }
+                );
                 index++;
             }
         }
