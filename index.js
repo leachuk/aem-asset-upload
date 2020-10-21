@@ -23,10 +23,12 @@ if (program.aemHost) {
 		// });
 		//
 		let metadata = aemApi.getAemApiMetadata({xxx1: ['fly-through','animation'], xxx2: 'foo'});
-		let url = aemApi.getAemApiResourcePath("/content/dam/sample-dev-data/auto-uploaded-1/DSC_0032.NEF");
-		aemApi.put(url, metadata).then(response => {
+		let url = aemApi.getAemApiResourcePath("/content/dam/sample-dev-data/auto-uploaded-1/DSC_0034.NEF");
+		await aemApi.put(url, metadata).then(response => {
 			console.log("PUT RESULT:");
-			console.log(response.data);
+			console.log(response);
+		}).catch(err => {
+			console.log(err);
 		});
 
 		//test path to node structure converter to enable nested metadata to be defined in the csv

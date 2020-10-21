@@ -51,8 +51,8 @@ module.exports.getLogger = function getLogger(logFile) {
             myFormat
         ),
         transports: [
-            new winston.transports.Console()
-            //new winston.transports.File({ filename: logFile }) // output to file
+            new winston.transports.Console(),
+            new winston.transports.File({ filename: logFile }) // output to file
         ]
     });
     return log;

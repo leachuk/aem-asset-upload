@@ -2,7 +2,7 @@ if(typeof require !== 'undefined') XLSX = require('xlsx');
 const jmespath = require('jmespath');
 
 const Utils = require('./utils');
-const log = Utils.getLogger();
+const log = Utils.getLogger('csv-parser.log');
 
 module.exports.readCsv = function readCsv(csvPath, jmessearch) {
 	if (csvPath) {

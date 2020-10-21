@@ -15,7 +15,13 @@ class AemRestApi {
 
     head(url) {
         return _request('head', this.hostname+url, this.username, this.password, '').catch(function (error) {
-            console.log(error);
+            if (error.response) {
+                throw error;
+                //return error.response; //return response
+            } else {
+                console.log("Error in HEAD calling: " + url);
+                console.log(error);
+            }
         });
     }
 
@@ -26,8 +32,24 @@ class AemRestApi {
     }
 
     put(url, data) {
-        return _request('put', this.hostname+url, this.username, this.password, data).catch(function (error) {
-            console.log(error);
+        return this.head(url,'').then(response => {
+            console.log("Using HEAD call to check resource exists at:" + url);
+            if (response.status == 200) {
+                return _request('put', this.hostname + url, this.username, this.password, data).catch(function (error) {
+                    console.log(error);
+                });
+            } else {
+                return response
+            }
+        }).catch(error => {
+            if (error.response && error.response.status == 404) {
+                console.log(`PUT 404 NOT FOUND at ${url}`);
+                throw new Error(error);
+            } else {
+                console.log(`PUT error when checking url ${url}`, error);
+                throw new Error(error);
+            }
+
         });
     }
 
