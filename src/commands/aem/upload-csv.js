@@ -103,20 +103,17 @@ class UploadCommand extends BaseCommand {
 
                             // Update metadata in AEM on successful upload
                             let filename = file.fileName;
-                            let { filepath, uploaded, aem_target_folder, csvRowNum, ...metadata } = csvData[dataindex]; //remove the non-metadata fields
-                            let filteredMetadata = CsvParser.filterEmpty(metadata);
-                            // if metadata is not empty, massage it to fit the AEM Asset api and submit
-                            if (Object.keys(filteredMetadata).length !== 0 && filteredMetadata.constructor === Object) {
-                                let aemMetadata = {class: 'asset', properties: { metadata: filteredMetadata}}; //add required AEM Asset API data
-                                // Remove any metadata fields which have an "empty" value
-                                let aemApiFileNamePath = targetFolder.replace('/content/dam', '/api/assets') + '/' + filename;
-                                log.info("AEM Metadata with CSV extracted data");
-                                log.info(JSON.stringify(aemMetadata));
-                                aemApi.put(aemApiFileNamePath, aemMetadata).then(response => {
-                                    log.info("Completed AEM Metadata update. Response data:");
-                                    log.info(JSON.stringify(response.data.properties));
-                                });
-                            }
+                            let aemMetadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
+                            let aemfileNamePath = targetFolder + '/' + filename;
+                            log.info("AEM Metadata with CSV extracted data");
+                            log.info(JSON.stringify(aemMetadata));
+                            aemApi.put(aemApi.getAemApiResourcePath(aemfileNamePath), aemMetadata).then(response => {
+                                log.info("Completed AEM Metadata update. Response data:");
+                                log.info(JSON.stringify(response.data.properties));
+                            }).catch(err => {
+                                log.error('Error on AEM Metadata update:', err);
+                            });
+
                             return file;
                         })
 

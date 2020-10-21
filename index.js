@@ -14,38 +14,39 @@ if (program.aemHost) {
 	console.log(`Axios REST test with AEM Asset integration`);
 	(async () => {
 		//get folder list
-		// const username = program.credentials.split(":")[0];
-		// const password = program.credentials.split(":")[1];
-		// const aemApi = new AemApi(program.aemHost, username, password);
+		const username = program.credentials.split(":")[0];
+		const password = program.credentials.split(":")[1];
+		const aemApi = new AemApi(program.aemHost, username, password);
 		// aemApi.get('/api/assets/sample-dev-data/auto-uploaded-1.json').then(response => {
 		// 	console.log("GET RESULT:");
 		// 	console.log(response);
 		// });
 		//
-		// let metadata = {class: 'asset', properties: {'jcr:title': 'updated title by API 2', metadata: {purpose: ['fly-through','animation'], custom: 'foo'} }};
-		// aemApi.put('/api/assets/sample-dev-data/auto-uploaded-1/sample-photo.jpg', metadata).then(response => {
-		// 	console.log("PUT RESULT:");
-		// 	console.log(response.data);
-		// });
+		let metadata = aemApi.getAemApiMetadata({xxx1: ['fly-through','animation'], xxx2: 'foo'});
+		let url = aemApi.getAemApiResourcePath("/content/dam/sample-dev-data/auto-uploaded-1/DSC_0032.NEF");
+		aemApi.put(url, metadata).then(response => {
+			console.log("PUT RESULT:");
+			console.log(response.data);
+		});
 
 		//test path to node structure converter to enable nested metadata to be defined in the csv
-		const data = [
-			"/org/openbmc/examples/path0/PythonObj",
-			"/org/openbmc/UserManager/Group",
-			"/org/openbmc/HostIpmi/1",
-			"/org/openbmc/HostServices",
-			"/org/openbmc/UserManager/Users",
-			"/org/openbmc/records/events",
-			"/org/openbmc/examples/path1/SDBusObj",
-			"/org/openbmc/UserManager/User",
-			"/org/openbmc/examples/path0/SDBusObj",
-			"/org/openbmc/examples/path1/PythonObj",
-			"/org/openbmc/UserManager/Groups",
-			"/org/openbmc/NetworkManager/Interface"
-		];
-
-		console.log(JSON.stringify(Utils.pathToJson(data)));
-		console.log(Utils.pathToJson(data).org.openbmc.examples)
+		// const data = [
+		// 	"/org/openbmc/examples/path0/PythonObj",
+		// 	"/org/openbmc/UserManager/Group",
+		// 	"/org/openbmc/HostIpmi/1",
+		// 	"/org/openbmc/HostServices",
+		// 	"/org/openbmc/UserManager/Users",
+		// 	"/org/openbmc/records/events",
+		// 	"/org/openbmc/examples/path1/SDBusObj",
+		// 	"/org/openbmc/UserManager/User",
+		// 	"/org/openbmc/examples/path0/SDBusObj",
+		// 	"/org/openbmc/examples/path1/PythonObj",
+		// 	"/org/openbmc/UserManager/Groups",
+		// 	"/org/openbmc/NetworkManager/Interface"
+		// ];
+		//
+		// console.log(JSON.stringify(Utils.pathToJson(data)));
+		// console.log(Utils.pathToJson(data).org.openbmc.examples)
 	})();
 
 } else {

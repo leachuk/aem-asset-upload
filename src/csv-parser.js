@@ -65,3 +65,8 @@ module.exports.filterEmpty = function filterEmpty(object) {
 	}
 	return obj;
 }
+
+module.exports.filterNonMetadata = function filterNonMetadata(jsonObject) {
+	let {filepath, uploaded, aem_target_folder, csvRowNum, ...aemMetadata} = jsonObject;
+	return aemMetadata;
+}
