@@ -82,24 +82,42 @@ class UploadCommand extends BaseCommand {
                 })
 
                 let jsonResult = {};
-                const promises = uploadFiles.map(files => //force 1 call by defining an array of size 1
-                     fileUpload.upload(uploadOptions, [files]).then((uploadResult) => {
-                        log.info('finished uploading files');
-                        jsonResult = uploadResult.toJSON();
-                        jsonResult.index = index;
-                        jsonResult.targetFolder = targetFolder;
-                        jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
-                        uploadReportData.push(jsonResult);
 
-                        // update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
+                let promises = {};
+                let filequeue = [];
+                let fileseries = Utils.chunk(uploadFiles,3); //define how many files to upload in parallel
+                filequeue.push(fileseries);
+                filequeue.map(fileblock => {
+                    promises = fileblock.map(files => {
+                            return fileUpload.upload(uploadOptions, files).then((uploadResult) => {
+                                log.info('finished uploading files');
+                                jsonResult = uploadResult.toJSON();
+                                jsonResult.index = index;
+                                jsonResult.targetFolder = targetFolder;
+                                jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
+                                uploadReportData.push(jsonResult);
 
-                        return jsonResult.detailedResult.map(function(file) {
+                                return jsonResult;
+                                // update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
+
+                            }).catch(err => {
+                                log.error('unhandled exception attempting to upload files', err);
+                            })
+                    });
+                });
+
+                //console.log(promises);
+                await Promise.all(promises).then(files => {
+                    //console.log("xxx",files);
+                    files.forEach(uploadResult => {
+                        log.info(`Completed Upload of files to ${JSON.stringify(uploadResult)}`);
+                        uploadResult.detailedResult.forEach(file => {
                             let dataindex = csvData.findIndex(function (o) {
                                 let filename = Path.basename(o.filepath);
                                 return file.fileName == filename && o.aem_target_folder == targetFolder;
                             })
 
-                           //CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+                            CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
 
                             // Update metadata in AEM on successful upload
                             let filename = file.fileName;
@@ -108,31 +126,23 @@ class UploadCommand extends BaseCommand {
                             let aemfileNamePath = targetFolder + '/' + filename;
                             log.info("AEM Metadata with CSV extracted data");
                             log.info(JSON.stringify(aemMetadata));
-                            let url = aemApi.getAemApiResourcePath("/content/dam/sample-dev-data/auto-uploaded-1/1624BouldercombeCallideLineRemovalDismantlingtowerviacrane3.JPG");
+                            let url = aemApi.getAemApiResourcePath(aemfileNamePath);
+                            log.info(`Updating metadata on url ${url}`);
+
                             aemApi.put(url, aemMetadata).then(response => {
                                 log.info("Completed AEM Metadata update. Response data:");
                                 log.info(JSON.stringify(response.data.properties));
                             }).catch(err => {
                                 log.error('Error on AEM Metadata update:', err);
                             });
-
-                            return file;
                         })
+                    });
+                });
 
-                    }).catch(err => {
-                        log.error('unhandled exception attempting to upload files', err);
-                    })
-
-                );
-                await Promise.all(promises).then(file => {
-                        file.forEach(uploadResult => {
-                            log.info(`Completed Upload to ${uploadResult[0].targetPath}`);
-                        })
-                    }
-                );
                 index++;
             }
         }
+
 
         if (uploadReportData.length > 0) {
             this.generateReport(uploadReportData);
@@ -149,6 +159,15 @@ class UploadCommand extends BaseCommand {
 
         let htmlOutput = mustache.render(mstTemplate, data);
         fs.writeFileSync(htmlResultFilename, htmlOutput);
+    }
+    testProm(args,options) {
+        return new Promise(function(resolve) {
+            setTimeout(function(args) {
+                resolve(args);
+            }, 2000)
+        }).then(function(){
+            return {a: args, b: options};
+        });
     }
 
 }
