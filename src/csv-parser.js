@@ -70,3 +70,11 @@ module.exports.filterNonMetadata = function filterNonMetadata(jsonObject) {
 	let {filepath, uploaded, aem_target_folder, csvRowNum, ...aemMetadata} = jsonObject;
 	return aemMetadata;
 }
+
+module.exports.getTargetFolder = function getTargetFolder(jsonObject) {
+	return jsonObject.aem_target_folder;
+}
+
+module.exports.getFilePath = function getFilePath(jsonObject) {
+	return jsonObject.filepath;
+}

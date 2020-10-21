@@ -65,84 +65,88 @@ class UploadCommand extends BaseCommand {
         if (csvData <= 0) {
             log.info("No results returned from the CSV file. All items may have been flagged as uploaded");
         }
+
         const groupData = Utils.groupByKey(csvData, 'aem_target_folder');
-        let index=0;
-
+        let dataArray = [];
         for (let key in groupData) {
-            let targetFolder = key;
-            if (groupData.hasOwnProperty(targetFolder)) {
-                let uploadOptions = new DirectBinaryUploadOptions()
-                    .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
-                    .withBasicAuth(credential)
-                    .withMaxConcurrent(parseInt(threads, 10));
-
-                log.info(targetFolder + " -> " + groupData[targetFolder]);
-                let uploadFiles = groupData[targetFolder].map(function(x){
-                    return x.filepath;
-                })
-
-                let jsonResult = {};
-
-                let promises = {};
-                let filequeue = [];
-                let fileseries = Utils.chunk(uploadFiles,3); //define how many files to upload in parallel
-                filequeue.push(fileseries);
-                filequeue.map(fileblock => {
-                    promises = fileblock.map(files => {
-                            return fileUpload.upload(uploadOptions, files).then((uploadResult) => {
-                                log.info('finished uploading files');
-                                jsonResult = uploadResult.toJSON();
-                                jsonResult.index = index;
-                                jsonResult.targetFolder = targetFolder;
-                                jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
-                                uploadReportData.push(jsonResult);
-
-                                return jsonResult;
-                                // update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
-
-                            }).catch(err => {
-                                log.error('unhandled exception attempting to upload files', err);
-                            })
-                    });
-                });
-
-                //console.log(promises);
-                await Promise.all(promises).then(files => {
-                    //console.log("xxx",files);
-                    files.forEach(uploadResult => {
-                        log.info(`Completed Upload of files to ${JSON.stringify(uploadResult)}`);
-                        uploadResult.detailedResult.forEach(file => {
-                            let dataindex = csvData.findIndex(function (o) {
-                                let filename = Path.basename(o.filepath);
-                                return file.fileName == filename && o.aem_target_folder == targetFolder;
-                            })
-
-                            CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
-
-                            // Update metadata in AEM on successful upload
-                            let filename = file.fileName;
-                            let metadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
-                            let aemMetadata = aemApi.getAemApiMetadata(metadata);
-                            let aemfileNamePath = targetFolder + '/' + filename;
-                            log.info("AEM Metadata with CSV extracted data");
-                            log.info(JSON.stringify(aemMetadata));
-                            let url = aemApi.getAemApiResourcePath(aemfileNamePath);
-                            log.info(`Updating metadata on url ${url}`);
-
-                            aemApi.put(url, aemMetadata).then(response => {
-                                log.info("Completed AEM Metadata update. Response data:");
-                                log.info(JSON.stringify(response.data.properties));
-                            }).catch(err => {
-                                log.error('Error on AEM Metadata update:', err);
-                            });
-                        })
-                    });
-                });
-
-                index++;
-            }
+            dataArray.push(groupData[key]);
         }
 
+        let promises = [];
+        let index=0;
+        dataArray.map(async targetBlock => {
+            let targetFolder = CsvParser.getTargetFolder(targetBlock[0]);  //all target folders are the same due to previous groupBy, so grab the first one
+            let uploadOptions = new DirectBinaryUploadOptions()
+                .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
+                .withBasicAuth(credential)
+                .withMaxConcurrent(parseInt(threads, 10));
+
+            log.info(targetFolder + " -> " + targetBlock);
+            let uploadFiles = targetBlock.map(function(x){
+                return x.filepath;
+            })
+
+            let jsonResult = {};
+            let filequeue = [];
+            let fileseries = Utils.chunk(uploadFiles,3); //define how many files to upload in parallel
+            filequeue.push(fileseries);
+            filequeue.map(async fileblock => {
+                fileblock.map(files => {
+                    let promise = fileUpload.upload(uploadOptions, files).then((uploadResult) => {
+                        log.info('finished uploading files');
+                        jsonResult = uploadResult.toJSON();
+                        jsonResult.index = index;
+                        jsonResult.targetFolder = targetFolder;
+                        jsonResult.finalSpentHumanTime = Utils.convertMs(jsonResult.finalSpent);
+                        uploadReportData.push(jsonResult);
+
+                        return jsonResult;
+                        // update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
+                    }).catch(err => {
+                        log.error('unhandled exception attempting to upload files', err);
+                    })
+                    promises.push(promise);
+                })
+            });
+
+            index++;
+        });
+
+        await Promise.all(promises).then(files => {
+            //console.log("xxx",files);
+            files.forEach(uploadResult => {
+                log.info(`Completed Upload of files to ${JSON.stringify(uploadResult)}`);
+                let targetFolder = uploadResult.targetFolder;
+                uploadResult.detailedResult.forEach(file => {
+                    let dataindex = csvData.findIndex(function (o) {
+                        let filename = Path.basename(o.filepath);
+                        return file.fileName == filename && o.aem_target_folder == targetFolder;
+                    })
+
+                    CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+
+                    // Update metadata in AEM on successful upload
+                    let filename = file.fileName;
+                    let metadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
+                    let aemMetadata = aemApi.getAemApiMetadata(metadata);
+                    let aemfileNamePath = targetFolder + '/' + filename;
+                    log.info("AEM Metadata with CSV extracted data");
+                    log.info(JSON.stringify(aemMetadata));
+                    let url = aemApi.getAemApiResourcePath(aemfileNamePath);
+                    log.info(`Updating metadata on url ${url}`);
+
+                    aemApi.put(url, aemMetadata).then(response => {
+                        log.info("Completed AEM Metadata update. Response data:");
+                        log.info(JSON.stringify(response.data));
+                        return response.status;
+                    }).catch(err => {
+                        log.error('Error on AEM Metadata update:', err);
+                    });
+                })
+
+                return uploadResult;
+            });
+        });
 
         if (uploadReportData.length > 0) {
             this.generateReport(uploadReportData);
