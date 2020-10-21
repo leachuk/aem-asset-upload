@@ -32,7 +32,7 @@ class AemRestApi {
     }
 
     put(url, data) {
-        return this.head(url,'').then(response => {
+        return this.head(url).then(response => {
             console.log("Using HEAD call to check resource exists at:" + url);
             if (response.status == 200) {
                 return _request('put', this.hostname + url, this.username, this.password, data).catch(function (error) {

@@ -99,15 +99,17 @@ class UploadCommand extends BaseCommand {
                                 return file.fileName == filename && o.aem_target_folder == targetFolder;
                             })
 
-                            CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+                           //CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
 
                             // Update metadata in AEM on successful upload
                             let filename = file.fileName;
-                            let aemMetadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
+                            let metadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
+                            let aemMetadata = aemApi.getAemApiMetadata(metadata);
                             let aemfileNamePath = targetFolder + '/' + filename;
                             log.info("AEM Metadata with CSV extracted data");
                             log.info(JSON.stringify(aemMetadata));
-                            aemApi.put(aemApi.getAemApiResourcePath(aemfileNamePath), aemMetadata).then(response => {
+                            let url = aemApi.getAemApiResourcePath("/content/dam/sample-dev-data/auto-uploaded-1/1624BouldercombeCallideLineRemovalDismantlingtowerviacrane3.JPG");
+                            aemApi.put(url, aemMetadata).then(response => {
                                 log.info("Completed AEM Metadata update. Response data:");
                                 log.info(JSON.stringify(response.data.properties));
                             }).catch(err => {
