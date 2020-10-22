@@ -79,7 +79,8 @@ class UploadCommand extends BaseCommand {
             let uploadOptions = new DirectBinaryUploadOptions()
                 .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
                 .withBasicAuth(credential)
-                .withMaxConcurrent(parseInt(threads, 10));
+                .withMaxConcurrent(parseInt(threads, 10))
+                .withHttpRetryCount(3);
 
             log.info(targetFolder + " -> " + targetBlock);
             let uploadFiles = targetBlock.map(function(x){
@@ -94,6 +95,36 @@ class UploadCommand extends BaseCommand {
                 fileblock.map(files => {
                     let promise = fileUpload.upload(uploadOptions, files).then((uploadResult) => {
                         log.info('finished uploading files');
+
+                        //If an upload failed, retry
+                        //let retryfiles = [];
+                        // uploadResult.getFileUploadResults().forEach(async result => {
+                        //     console.log(result);
+                        //     let resultJson = result.toJSON();
+                        //     if (!resultJson.success) {
+                        //         console.log("FAILED!");
+                        //         console.log(resultJson);
+                        //         let retryTargetFolder = Path.dirname(resultJson.targetPath)
+                        //         let dataindex = csvData.findIndex(function (o) {
+                        //             let filename = Path.basename(o.filepath);
+                        //             return resultJson.fileName == filename && o.aem_target_folder == retryTargetFolder;
+                        //         })
+                        //         console.log(csvData[dataindex]);
+                        //
+                        //         //retryfiles.push([Path.dirname(resultJson.targetPath), resultJson.fileName])
+                        //         let retryUploadOptions = new DirectBinaryUploadOptions()
+                        //             .withUrl(`${Utils.trimRight(host, ['/'])}${retryTargetFolder}`)
+                        //             .withBasicAuth(credential)
+                        //             .withMaxConcurrent(parseInt(threads, 10))
+                        //             .withHttpRetryCount(3);
+                        //         await fileUpload.upload(retryUploadOptions, csvData[dataindex].filepath).then(retryResult => {
+                        //             console.log("RETRY");
+                        //             console.log(retryResult);
+                        //
+                        //         });
+                        //     }
+                        // })
+
                         jsonResult = uploadResult.toJSON();
                         jsonResult.index = index;
                         jsonResult.targetFolder = targetFolder;
@@ -106,10 +137,11 @@ class UploadCommand extends BaseCommand {
                         log.error('unhandled exception attempting to upload files', err);
                     })
                     promises.push(promise);
-                })
+                });
+                index++;
             });
 
-            index++;
+
         });
 
         await Promise.all(promises).then(files => {
@@ -123,25 +155,27 @@ class UploadCommand extends BaseCommand {
                         return file.fileName == filename && o.aem_target_folder == targetFolder;
                     })
 
-                    CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+                    if (file.success) { // successfully uploaded
+                        CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
 
-                    // Update metadata in AEM on successful upload
-                    let filename = file.fileName;
-                    let metadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
-                    let aemMetadata = aemApi.getAemApiMetadata(metadata);
-                    let aemfileNamePath = targetFolder + '/' + filename;
-                    log.info("AEM Metadata with CSV extracted data");
-                    log.info(JSON.stringify(aemMetadata));
-                    let url = aemApi.getAemApiResourcePath(aemfileNamePath);
-                    log.info(`Updating metadata on url ${url}`);
+                        // Update metadata in AEM on successful upload
+                        let filename = file.fileName;
+                        let metadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
+                        let aemMetadata = aemApi.getAemApiMetadata(metadata);
+                        let aemfileNamePath = targetFolder + '/' + filename;
+                        log.info("AEM Metadata with CSV extracted data");
+                        log.info(JSON.stringify(aemMetadata));
+                        let url = aemApi.getAemApiResourcePath(aemfileNamePath);
+                        log.info(`Updating metadata on url ${url}`);
 
-                    aemApi.put(url, aemMetadata).then(response => {
-                        log.info("Completed AEM Metadata update. Response data:");
-                        log.info(JSON.stringify(response.data));
-                        return response.status;
-                    }).catch(err => {
-                        log.error('Error on AEM Metadata update:', err);
-                    });
+                        aemApi.put(url, aemMetadata).then(response => {
+                            log.info("Completed AEM Metadata update. Response data:");
+                            log.info(JSON.stringify(response, Utils.censor(response)));
+                            return "SUCCESS metadata updated";
+                        }).catch(err => {
+                            log.error('Error on AEM Metadata update:', err);
+                        });
+                    }
                 })
 
                 return uploadResult;
