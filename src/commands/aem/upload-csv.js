@@ -81,7 +81,8 @@ class UploadCommand extends BaseCommand {
                 .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
                 .withBasicAuth(credential)
                 .withMaxConcurrent(parseInt(threads, 10))
-                .withHttpRetryCount(3);
+                .withHttpRetryCount(3)
+                .withHttpRetryDelay(1000);
 
             log.info(targetFolder + " -> " + targetBlock);
             let uploadFiles = targetBlock.map(function(x){
@@ -113,73 +114,99 @@ class UploadCommand extends BaseCommand {
                 });
                 index++;
             });
-
-
         });
 
         await Promise.all(promises).then(files => {
-            //console.log("xxx",files);
+            log.info("FILES:");
+            log.info(JSON.stringify(files));
             files.forEach(uploadResult => {
-                log.info(`Completed Upload of files to ${JSON.stringify(uploadResult)}`);
-                let targetFolder = uploadResult.targetFolder;
-                uploadResult.detailedResult.forEach(file => {
-                    let dataindex = csvData.findIndex(function (o) {
-                        let filename = Path.basename(o.filepath);
-                        return file.fileName == filename && o.aem_target_folder == targetFolder;
-                    })
-
-                    //If an upload failed, retry
-                    let filename = file.fileName;
-                    let metadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
-                    let aemMetadata = aemApi.getAemApiMetadata(metadata);
-                    let aemfileNamePath = targetFolder + '/' + filename;
-                    log.info("AEM Metadata with CSV extracted data");
-                    log.info(JSON.stringify(aemMetadata));
-                    let url = aemApi.getAemApiResourcePath(aemfileNamePath);
-
-                    if (!file.success) {
-                        log.info("FAILED! Running a re-upload");
-                        let retryTargetFolder = Path.dirname(file.targetPath)
+                if (uploadResult !== undefined) {
+                    log.info(`Completed Upload of files to ${JSON.stringify(uploadResult)}`);
+                    let targetFolder = uploadResult.targetFolder;
+                    log.info("TEST get target folder:", targetFolder);
+                    uploadResult.detailedResult.forEach(file => {
                         let dataindex = csvData.findIndex(function (o) {
                             let filename = Path.basename(o.filepath);
-                            return file.fileName == filename && o.aem_target_folder == retryTargetFolder;
+                            return file.fileName == filename && o.aem_target_folder == targetFolder;
                         })
-                        let retryUploadOptions = new DirectBinaryUploadOptions()
-                            .withUrl(`${Utils.trimRight(host, ['/'])}${retryTargetFolder}`)
-                            .withBasicAuth(credential)
-                            .withMaxConcurrent(parseInt(threads, 10))
-                            .withHttpRetryCount(3);
-                        fileUpload.upload(retryUploadOptions, [csvData[dataindex].filepath]).then(retryResult => {
-                            log.info("RETRY SUCCESS");
-                            log.info(retryResult);
-                            CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
-                            log.info(`RETRY Updating metadata on url ${url}`);
+
+                        //If an upload failed, retry
+                        let filename = file.fileName;
+                        let metadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
+                        let aemMetadata = aemApi.getAemApiMetadata(metadata);
+                        let aemfileNamePath = targetFolder + '/' + filename;
+                        log.info("AEM Metadata with CSV extracted data");
+                        log.info(JSON.stringify(aemMetadata));
+                        let url = aemApi.getAemApiResourcePath(aemfileNamePath);
+
+                        if (!file.success) {
+                            log.info("FAILED! Running a re-upload");
+                            let retryTargetFolder = Path.dirname(file.targetPath)
+                            let dataindex = csvData.findIndex(function (o) {
+                                let filename = Path.basename(o.filepath);
+                                return file.fileName == filename && o.aem_target_folder == retryTargetFolder;
+                            })
+                            let retryUploadOptions = new DirectBinaryUploadOptions()
+                                .withUrl(`${Utils.trimRight(host, ['/'])}${retryTargetFolder}`)
+                                .withBasicAuth(credential)
+                                .withMaxConcurrent(parseInt(threads, 10))
+                                .withHttpRetryCount(1);
+                            fileUpload.upload(retryUploadOptions, [csvData[dataindex].filepath]).then(retryResult => {
+                                log.info("RETRY RESULT JSON:");
+                                log.info(retryResult.detailedResult);
+                                if (retryResult !== undefined && retryResult.detailedResult !== undefined) {
+                                    retryResult.detailedResult.forEach(file => {
+                                        if (file.success) {
+                                            log.info("RETRY SUCCESS");
+                                            log.info(`RETRY Updating metadata on url ${url}`);
+                                            aemApi.put(url, aemMetadata).then(response => {
+                                                log.info("Completed AEM Metadata update. Response data:");
+                                                CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+                                                log.info(JSON.stringify(response, Utils.censor(response)));
+                                                return "SUCCESS metadata updated";
+                                            }).catch(err => {
+                                                log.error('Error on AEM Metadata update:', err);
+                                            });
+                                        } else {
+                                            log.info("RETRY FAILED");
+                                            log.info(retryResult);
+                                        }
+                                    });
+                                }
+                                // if (retryResult.detailedResult[0].success) {
+                                //     log.info("RETRY SUCCESS");
+                                //     log.info(`RETRY Updating metadata on url ${url}`);
+                                //     aemApi.put(url, aemMetadata).then(response => {
+                                //         log.info("Completed AEM Metadata update. Response data:");
+                                //         CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+                                //         log.info(JSON.stringify(response, Utils.censor(response)));
+                                //         return "SUCCESS metadata updated";
+                                //     }).catch(err => {
+                                //         log.error('Error on AEM Metadata update:', err);
+                                //     });
+                                // } else {
+                                //     log.info("RETRY FAILED");
+                                //     log.info(retryResult);
+                                // }
+                            }).catch(err => {
+                                log.error("RE-UPLOAD ERROR", err);
+                            });
+                        } else { // successfully uploaded
+                            // Update metadata in AEM on successful upload
+                            log.info(`Updating metadata on url ${url}`);
                             aemApi.put(url, aemMetadata).then(response => {
                                 log.info("Completed AEM Metadata update. Response data:");
                                 log.info(JSON.stringify(response, Utils.censor(response)));
+                                CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
                                 return "SUCCESS metadata updated";
                             }).catch(err => {
                                 log.error('Error on AEM Metadata update:', err);
                             });
-                        }).catch(err => {
-                            log.error("RE-UPLOAD ERROR", err);
-                        });
-                    } else { // successfully uploaded
-                        CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+                        }
+                    })
 
-                        // Update metadata in AEM on successful upload
-                        log.info(`Updating metadata on url ${url}`);
-                        aemApi.put(url, aemMetadata).then(response => {
-                            log.info("Completed AEM Metadata update. Response data:");
-                            log.info(JSON.stringify(response, Utils.censor(response)));
-                            return "SUCCESS metadata updated";
-                        }).catch(err => {
-                            log.error('Error on AEM Metadata update:', err);
-                        });
-                    }
-                })
-
-                return uploadResult;
+                    return uploadResult;
+                }
             });
         });
 
