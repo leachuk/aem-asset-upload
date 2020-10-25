@@ -41,7 +41,6 @@ class AemRestApi {
                     console.log(`PUT error when checking url ${url}`, error);
                     throw new Error(error);
                 }
-                ;
             });
         });
     }

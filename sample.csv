@@ -1,4 +1,4 @@
 ﻿filepath,uploaded,aem_target_folder,md_metadata_1,md_metadata2
-/Users/stewart.leach/project/john-holland/support/Sample Assets/1624BouldercombeCallideLineRemovalDismantlingtowerviacrane3.JPG,,/content/dam/sample-dev-data/auto-uploaded-1,bar metadata 3,foo metadata 3
-/Users/stewart.leach/project/john-holland/support/Sample Assets/DTPLI_RAILAWARDS_0112.jpg,,/content/dam/sample-dev-data/auto-uploaded-2,,
-/Users/stewart.leach/project/john-holland/support/Sample Assets/JH_APCT_X25_090603_024.jpg,,/content/dam/sample-dev-data/auto-uploaded-1,,
+/Users/stewart.leach/project/john-holland/support/Sample Assets/1624BouldercombeCallideLineRemovalDismantlingtowerviacrane3.JPG,true,/content/dam/sample-dev-data/auto-uploaded-1,bar metadata 3,foo metadata 3
+/Users/stewart.leach/project/john-holland/support/Sample Assets/DTPLI_RAILAWARDS_0112.jpg,true,/content/dam/sample-dev-data/auto-uploaded-2,,
+/Users/stewart.leach/project/john-holland/support/Sample Assets/JH_APCT_X25_090603_024.jpg,true,/content/dam/sample-dev-data/auto-uploaded-1,,
