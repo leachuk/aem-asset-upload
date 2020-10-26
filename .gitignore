@@ -109,3 +109,5 @@ dist
 /result-*.html
 /exported.txt
 /sample*.csv
+# Built binary file using https://github.com/vercel/pkg
+/aem-asset-upload

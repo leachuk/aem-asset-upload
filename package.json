@@ -1,7 +1,7 @@
 {
-  "name": "excel-parser",
+  "name": "aem-asset-upload",
   "version": "1.0.0",
-  "description": "Test project for parsing excel spreadsheets with formulas and filters and outputting to csv",
+  "description": "Project for bulk uploading assets to AEM and updating their metadata, as defined in a CSV file.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -48,6 +48,25 @@
     "bin": "aio-aem",
     "devPlugins": [
       "@oclif/plugin-help"
+    ]
+  },
+  "bin" : "bin/run",
+  "pkg": {
+    "scripts": "src/**/*",
+    "assets": [
+      "view/**/*",
+      "node_modules/commander/**",
+      "node_modules/jmespath/**",
+      "node_modules/xlsx/**",
+      "node_modules/@adobe/aem-upload/**",
+      "node_modules/@oclif/command/**",
+      "node_modules/@oclif/config/**",
+      "node_modules/@oclif/errors/**",
+      "node_modules/@oclif/plugin-help/**",
+      "node_modules/debug/**",
+      "node_modules/mustache/**",
+      "node_modules/winston/**",
+      "node_modules/axios/**"
     ]
   }
 }
