@@ -81,7 +81,7 @@ class UploadCommand extends BaseCommand {
                 .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
                 .withBasicAuth(credential)
                 .withMaxConcurrent(parseInt(threads, 10))
-                .withHttpRetryCount(3)
+                .withHttpRetryCount(2)
                 .withHttpRetryDelay(1000);
 
             log.info(targetFolder + " -> " + targetBlock);
@@ -109,7 +109,7 @@ class UploadCommand extends BaseCommand {
                             .withUrl(`${Utils.trimRight(host, ['/'])}${targetFolder}`)
                             .withBasicAuth(credential)
                             .withMaxConcurrent(parseInt(threads, 10))
-                            .withHttpRetryCount(1);
+                            .withHttpRetryCount(2);
                         this.updateAssetMetadata(retryUploadOptions, jsonResult, csvData, aemApi, inputcsv, log)
 
                         return jsonResult;
@@ -152,6 +152,8 @@ class UploadCommand extends BaseCommand {
         });
     }
 
+
+
     async updateAssetMetadata(uploadFileOptions, uploadResultsJson, csvData, aemApi, inputcsv, log) {
         const fileUpload = new FileSystemUpload({ log });
         if (uploadResultsJson !== undefined) {
@@ -187,15 +189,19 @@ class UploadCommand extends BaseCommand {
                             retryResult.detailedResult.forEach(file => {
                                 if (file.success) {
                                     log.info("RETRY SUCCESS");
-                                    log.info(`RETRY Updating metadata on url ${url}`);
-                                    aemApi.put(url, aemMetadata).then(response => {
-                                        log.info("Completed AEM Metadata update. Response data:");
-                                        CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
-                                        log.info(JSON.stringify(response, Utils.censor(response)));
-                                        return "SUCCESS metadata updated";
-                                    }).catch(err => {
-                                        log.error('Error on AEM Metadata update:', err);
-                                    });
+                                    if(!_isEmptyObject(aemMetadata)) {
+                                        log.info(`RETRY Updating metadata on url ${url}`);
+                                        aemApi.put(url, aemMetadata).then(response => {
+                                            log.info("Completed AEM Metadata update. Response data:");
+                                            CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+                                            log.info(JSON.stringify(response, Utils.censor(response)));
+                                            return "SUCCESS metadata updated";
+                                        }).catch(err => {
+                                            log.error('Error on AEM Metadata update:', err);
+                                        });
+                                    } else {
+                                        log.info(`RETRY no metadata to set on url ${url}`);
+                                    }
                                 } else {
                                     log.info("RETRY FAILED");
                                     log.info(retryResult);
@@ -206,16 +212,20 @@ class UploadCommand extends BaseCommand {
                         log.error("RE-UPLOAD ERROR", err);
                     });
                 } else { // successfully uploaded
-                    // Update metadata in AEM on successful upload
-                    log.info(`Updating metadata on url ${url}`);
-                    aemApi.put(url, aemMetadata).then(response => {
-                        log.info("Completed AEM Metadata update. Response data:");
-                        log.info(JSON.stringify(response, Utils.censor(response)));
-                        CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
-                        return "SUCCESS metadata updated";
-                    }).catch(err => {
-                        log.error('Error on AEM Metadata update:', err);
-                    });
+                    if(!_isEmptyObject(aemMetadata)) {
+                        // Update metadata in AEM on successful upload
+                        log.info(`Updating metadata on url ${url}`);
+                        aemApi.put(url, aemMetadata).then(response => {
+                            log.info("Completed AEM Metadata update. Response data:");
+                            log.info(JSON.stringify(response, Utils.censor(response)));
+                            CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum);
+                            return "SUCCESS metadata updated";
+                        }).catch(err => {
+                            log.error('Error on AEM Metadata update:', err);
+                        });
+                    } else {
+                        log.info(`RETRY no metadata to set on url ${url}`);
+                    }
                 }
             })
 
@@ -223,6 +233,15 @@ class UploadCommand extends BaseCommand {
         }
     }
 
+}
+
+function _isEmptyObject(jsonObject) {
+    let isEmpty = true;
+    if (Object.keys(jsonObject).length !== 0 && jsonObject.constructor === Object) {
+        isEmpty = false;
+    }
+
+    return isEmpty;
 }
 
 UploadCommand.flags = Object.assign({}, BaseCommand.flags, {
