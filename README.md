@@ -1,6 +1,9 @@
 # aem-asset-upload
 For bulk uploading of asset files to AEM using a CSV file
 
+This is a fork of https://github.com/adobe/aio-cli-plugin-aem
+Which is built with https://github.com/adobe/aem-upload
+
 ## Sample Commands
 Upload of asset via nodejs
 ```
@@ -51,7 +54,7 @@ Packaging the node app to a single binary executable using https://github.com/ve
 
 Requires the `pkg` module to be installed globally with `npm install -g pkg`
 ```
-pkg . --targets node14-macos-x64
+pkg . --targets node14-win-x64
 ```
 Note: In the `--targets` command used to create the executable we can specify the target architecture according to:
 - nodeRange `node${n}` or latest → In our case was `node14`
