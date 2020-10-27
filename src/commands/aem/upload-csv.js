@@ -115,6 +115,8 @@ class UploadCommand extends BaseCommand {
                         return jsonResult;
                         // update spreadsheet 'uploaded' cell so it isn't re-uploaded on the next run
                     }).catch(err => {
+                        // FYI no useful into about the failed request is returned here. So we can't retry at this stage.
+                        //     An update in the Adobe aem-upload module would be required.
                         log.error('unhandled exception attempting to upload files', err);
                     })
                     promises.push(promise);
