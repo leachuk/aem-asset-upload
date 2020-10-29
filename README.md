@@ -5,6 +5,7 @@ This is a fork of https://github.com/adobe/aio-cli-plugin-aem
 Which is built with https://github.com/adobe/aem-upload
 
 ## Sample Commands
+### AEM Asset Upload
 Upload of asset via nodejs
 ```
 node bin/run aem:upload-csv -h https://<aem-hostname> -c jh-upload-service-account:<password> -i /path/to/upload.csv
@@ -12,6 +13,11 @@ node bin/run aem:upload-csv -h https://<aem-hostname> -c jh-upload-service-accou
 Via compiled binary
 ```
 ./aem-asset-upload aem:upload-csv -h https://<aem-hostname> -c jh-upload-service-account:<password> -i /path/to/upload.csv
+```
+
+### XML export transform
+```
+node bin/run xml:export-canto-csv
 ```
 
 ## CSV Schema Requirements
