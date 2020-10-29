@@ -9,17 +9,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "commander": "^5.1.0",
-    "jmespath": "^0.15.0",
-    "xlsx": "^0.16.3",
     "@adobe/aem-upload": "1.0.11",
     "@oclif/command": "^1",
     "@oclif/config": "^1.14.0",
     "@oclif/errors": "^1.1.2",
+    "axios": "^0.20.0 ",
+    "commander": "^5.1.0",
     "debug": "^4.1.0",
+    "jmespath": "^0.15.0",
     "mustache": "^3.2.1",
     "winston": "^3.2.1",
-    "axios": "^0.20.0 "
+    "xlsx": "^0.16.3",
+    "xmldom": "^0.4.0",
+    "xpath": "0.0.32"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1.21.3",
@@ -50,7 +52,7 @@
       "@oclif/plugin-help"
     ]
   },
-  "bin" : "bin/run",
+  "bin": "bin/run",
   "pkg": {
     "scripts": "src/**/*",
     "assets": [

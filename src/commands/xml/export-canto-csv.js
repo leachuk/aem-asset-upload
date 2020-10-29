@@ -50,6 +50,38 @@ class ExportCantoCsvCommand extends BaseCommand {
         const log = Utils.getLogger(logFile);
 
         log.info("Starting XML parsing of Canto assets")
+
+        const xpath = require('xpath');
+        const dom = require('xmldom').DOMParser;
+
+        let node = [];
+        let xml = fs.readFileSync('./single_canto_asset_record.xml', 'utf8').toString();
+        let doc = new dom().parseFromString(xml)
+        let result = xpath.evaluate(
+            "//*[local-name(.)='Field']",            // xpathExpression
+            doc,                        // contextNode
+            null,                       // namespaceResolver
+            xpath.XPathResult.ANY_TYPE, // resultType
+            null                        // result
+        )
+
+        node = result.iterateNext();
+        while (node) {
+            console.log("Node: " + node.toString());
+            console.log("uid:" + node.attributes.getNamedItem("uid").value);
+            let childnodes = Array.from(node.childNodes)
+            childnodes.forEach(item => {
+                if (item.nodeType == 1) {
+                    console.log("name:" + item.firstChild.nodeValue)
+                }
+            })
+
+            node = result.iterateNext();
+        }
+
+        // node.forEach(parent => {
+        //     console.log(parent);
+        // })
     }
 }
 

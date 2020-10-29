@@ -111,3 +111,4 @@ dist
 /sample*.csv
 # Built binary file using https://github.com/vercel/pkg
 /aem-asset-upload
+/single_canto_asset_record.xml
