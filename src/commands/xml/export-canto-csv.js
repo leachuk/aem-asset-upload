@@ -54,31 +54,89 @@ class ExportCantoCsvCommand extends BaseCommand {
         const xpath = require('xpath');
         const dom = require('xmldom').DOMParser;
 
-        let node = [];
+        //The uber json result object which will store the structured content for inserting to the CSV metadata
+        let assetjson = { metadata: {} };
+
+        let node = null;
         let xml = fs.readFileSync('./single_canto_asset_record.xml', 'utf8').toString();
         let doc = new dom().parseFromString(xml)
-        let result = xpath.evaluate(
-            "//*[local-name(.)='Field']",            // xpathExpression
-            doc,                        // contextNode
-            null,                       // namespaceResolver
-            xpath.XPathResult.ANY_TYPE, // resultType
-            null                        // result
-        )
 
+        // Parse the xml field name list using xmldom
+        let result = xpath.evaluate(
+            "//*[local-name(.)='Field']", // xpathExpression
+            doc,                                    // contextNode
+            null,                           // namespaceResolver
+            xpath.XPathResult.ANY_TYPE,             // resultType
+            null                              // result
+        )
         node = result.iterateNext();
         while (node) {
+            let field = {};
+            let uid = node.attributes.getNamedItem("uid").value;
             console.log("Node: " + node.toString());
             console.log("uid:" + node.attributes.getNamedItem("uid").value);
             let childnodes = Array.from(node.childNodes)
             childnodes.forEach(item => {
                 if (item.nodeType == 1) {
-                    console.log("name:" + item.firstChild.nodeValue)
+                    field.name = item.firstChild.nodeValue;
+                    console.log("name:" + item.firstChild.nodeValue);
                 }
             })
-
+            assetjson.metadata[uid] = field;
             node = result.iterateNext();
         }
 
+        // Populate with metadata from the Canto Asset XML
+        let metadataresult = xpath.evaluate(
+            "//*[local-name(.)='Item']", // xpathExpression
+            doc,                                   // contextNode
+            null,                          // namespaceResolver
+            xpath.XPathResult.ANY_TYPE,            // resultType
+            null                             // result
+        )
+        node = metadataresult.iterateNext();
+        while (node) {
+            let field = {};
+            //console.log("Node: " + node.toString());
+            //console.log("uid:" + node.attributes.getNamedItem("uid").value);
+            let childnodes = Array.from(node.childNodes)
+            childnodes.forEach(item => {
+                if (item.nodeType == 1) {
+                    //console.log("uid:" + item.attributes.getNamedItem("uid").value);
+                    //console.log("   value:" + item.firstChild.nodeValue);
+
+                    let uid = item.attributes.getNamedItem("uid").value;
+                    let value = item.firstChild.nodeValue;
+
+                    if (value !== undefined && assetjson.metadata[uid] !== undefined) {
+                        let itemchildnodes = Array.from(item.childNodes)
+
+                        if (itemchildnodes.length > 3) { // manage fields with more than one value
+                            //console.log(itemchildnodes)
+                            let multiValues = [];
+                            itemchildnodes.forEach(item => {
+                                if (item.nodeType == 1) {
+                                    multiValues.push(item.firstChild.nodeValue);
+                                    //console.log("name:" + item.firstChild.nodeValue);
+                                }
+                            });
+                            value = multiValues;
+                        } else {
+                            itemchildnodes.forEach(item => {
+                                if (item.nodeType == 1) {
+                                    value = item.firstChild.nodeValue;
+                                    //console.log("name:" + item.firstChild.nodeValue);
+                                }
+                            })
+                        }
+                        assetjson.metadata[uid].value = value;
+                    }
+                }
+            })
+            node = metadataresult.iterateNext();
+        }
+
+        console.log(assetjson);
         // node.forEach(parent => {
         //     console.log(parent);
         // })
