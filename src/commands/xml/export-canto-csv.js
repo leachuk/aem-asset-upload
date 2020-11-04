@@ -20,17 +20,18 @@ class ExportCantoCsvCommand extends BaseCommand {
             log: logFile,
             output: htmlResult,
             inputxml,
+            targetfolder,
+            outputcsv,
         } = newFlags;
 
         // setup logger
         const log = Utils.getLogger(logFile);
 
         const cantoJson = CantoParser.readXml(inputxml);
-        console.log(cantoJson);
+        log.info(`Parsing the Canto xml file "${inputxml}"`);
 
         // Convert to XSLX friendly format so it can be saved as CSV
         let csvArray = [];
-
         for (let key in cantoJson) {
             let rowJson = {}
             for (let field in cantoJson[key]) {
@@ -39,36 +40,32 @@ class ExportCantoCsvCommand extends BaseCommand {
                 } else {
                     rowJson[cantoJson[key][field].name] = "";
                 }
+                // Set the heading array to replace Canto headings with our required schema headings
+                if (cantoJson[key][field].name == "OAR") {
+                    delete Object.assign(rowJson, {['filepath']: rowJson['OAR'] })['OAR'];
+                }
+                // Insert aem_target_folder default from arg flag
+                rowJson['aem_target_folder'] = targetfolder;
             }
             csvArray.push(rowJson);
         }
-        console.log(csvArray);
+        //console.log(csvArray);
 
         let csvHeaderArray = [];
-        for (let field in cantoJson[0]) {
-            // Set the heading array
-            if (cantoJson[0][field].name == "OAR") {
-                cantoJson[0][field].name = "filepath"
-            }
-            csvHeaderArray.push(cantoJson[0][field].name);
+        for (let field in csvArray[0]) {
+            csvHeaderArray.push(field);
         }
         csvHeaderArray = Utils.arraymove(csvHeaderArray,csvHeaderArray.indexOf("filepath"),0);
-        console.log(csvHeaderArray);
+        csvHeaderArray.splice(1,0,"uploaded"); // Create uploaded flag CSV heading
+        csvHeaderArray = Utils.arraymove(csvHeaderArray,csvHeaderArray.indexOf("aem_target_folder"),2);
+        log.info(`Setting the following headings in the Canto CSV file`);
+        log.info(`    ${csvHeaderArray}`);
 
-        //XLSX.writeFile(cantoCsv, 'out.csv');
-        const testData = [
-            { S:1, h:2, e:3, e_1:4, t:5, J:6, S_1:7 },
-            { S:2, h:3, e:4, e_1:5, t:6, J:7, S_1:8 }
-        ];
         const workbook = XLSX.utils.book_new();
-        const cantoCsvWorksheet = XLSX.utils.json_to_sheet(csvArray);
+        const cantoCsvWorksheet = XLSX.utils.json_to_sheet(csvArray, { header: csvHeaderArray});
         XLSX.utils.book_append_sheet(workbook, cantoCsvWorksheet, 'canto');
-        XLSX.writeFile(workbook,'outtest.csv');
-
-
-        // node.forEach(parent => {
-        //     console.log(parent);
-        // })
+        XLSX.writeFile(workbook,outputcsv);
+        log.info(`Exporting converted Canto data to "${outputcsv}"`);
     }
 }
 
@@ -76,9 +73,19 @@ class ExportCantoCsvCommand extends BaseCommand {
 ExportCantoCsvCommand.flags = Object.assign({}, BaseCommand.flags, {
     inputxml: flags.string({
         char: 'i',
+        description: `Path to the XML file which was exported from Canto with the asset metadata`,
+        default: 'sample.xml'
+    }),
+    outputcsv: flags.string({
+        char: 'o',
         description: `Path to the CSV file used for input of files and metadata to upload. 
 For example, an absolute path /foo/bar/sample.csv or a relative path sample.csv`,
-        default: 'sample.xml'
+        default: 'canto-converted.csv'
+    }),
+    targetfolder: flags.string({
+        char: 't',
+        description: `Default path for the AEM DAM folder to upload the assets into.`,
+        default: '/content/dam/canto-auto-import-${timestamp}'
     }),
     log: flags.string({
         char: 'l',
