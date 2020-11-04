@@ -127,3 +127,11 @@ module.exports.censor = function censor(censor) {
         return value;
     }
 }
+
+module.exports.arraymove = function arraymove(arr, fromIndex, toIndex) {
+    let element = arr[fromIndex];
+    arr.splice(fromIndex, 1);
+    arr.splice(toIndex, 0, element);
+
+    return arr;
+}

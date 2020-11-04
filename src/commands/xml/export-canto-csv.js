@@ -1,32 +1,8 @@
-/*
-Copyright 2018 Adobe. All rights reserved.
-This file is licensed to you under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License. You may obtain a copy
-of the License at http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under
-the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
-OF ANY KIND, either express or implied. See the License for the specific language
-governing permissions and limitations under the License.
-*/
-
-const fs = require('fs');
-
-const mustache = require('mustache');
-
+if(typeof require !== 'undefined') XLSX = require('xlsx');
 const {flags} = require('@oclif/command');
-const {
-    DirectBinaryUploadOptions,
-    FileSystemUpload,
-} = require('@adobe/aem-upload');
-
 const BaseCommand = require('../../base-command');
 const Utils = require('../../utils');
-const CsvParser = require('../../csv-parser');
-const AemApi = require('../../aem-rest-api');
 const CantoParser = require('../../canto-xml-parser');
-
-let uploadReportData = [];
 
 class ExportCantoCsvCommand extends BaseCommand {
     async doRun(args) {
@@ -52,11 +28,50 @@ class ExportCantoCsvCommand extends BaseCommand {
         const cantoJson = CantoParser.readXml(inputxml);
         console.log(cantoJson);
 
+        // Convert to XSLX friendly format so it can be saved as CSV
+        let csvArray = [];
+
+        for (let key in cantoJson) {
+            let rowJson = {}
+            for (let field in cantoJson[key]) {
+                if (cantoJson[key][field].value !== undefined) {
+                    rowJson[cantoJson[key][field].name] = cantoJson[key][field].value;
+                } else {
+                    rowJson[cantoJson[key][field].name] = "";
+                }
+            }
+            csvArray.push(rowJson);
+        }
+        console.log(csvArray);
+
+        let csvHeaderArray = [];
+        for (let field in cantoJson[0]) {
+            // Set the heading array
+            if (cantoJson[0][field].name == "OAR") {
+                cantoJson[0][field].name = "filepath"
+            }
+            csvHeaderArray.push(cantoJson[0][field].name);
+        }
+        csvHeaderArray = Utils.arraymove(csvHeaderArray,csvHeaderArray.indexOf("filepath"),0);
+        console.log(csvHeaderArray);
+
+        //XLSX.writeFile(cantoCsv, 'out.csv');
+        const testData = [
+            { S:1, h:2, e:3, e_1:4, t:5, J:6, S_1:7 },
+            { S:2, h:3, e:4, e_1:5, t:6, J:7, S_1:8 }
+        ];
+        const workbook = XLSX.utils.book_new();
+        const cantoCsvWorksheet = XLSX.utils.json_to_sheet(csvArray);
+        XLSX.utils.book_append_sheet(workbook, cantoCsvWorksheet, 'canto');
+        XLSX.writeFile(workbook,'outtest.csv');
+
+
         // node.forEach(parent => {
         //     console.log(parent);
         // })
     }
 }
+
 
 ExportCantoCsvCommand.flags = Object.assign({}, BaseCommand.flags, {
     inputxml: flags.string({

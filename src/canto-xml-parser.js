@@ -12,7 +12,7 @@ module.exports.readXml = function readXml(inputXmlPath) {
 
     //The uber json result object which will store the structured content for inserting to the CSV metadata
     let assetlist = [];
-    let assetjson = {metadata: {}};
+    let assetjson = {};
 
     let node = null;
     let xml = fs.readFileSync(inputXmlPath, 'utf8').toString();
@@ -39,7 +39,7 @@ module.exports.readXml = function readXml(inputXmlPath) {
                 console.log("name:" + item.firstChild.nodeValue);
             }
         })
-        assetjson.metadata[uid] = field;
+        assetjson[uid] = field;
         node = result.iterateNext();
     }
 
@@ -70,7 +70,7 @@ module.exports.readXml = function readXml(inputXmlPath) {
                         let uid = fieldvalue.attributes.getNamedItem("uid").value;
                         let value = fieldvalue.firstChild.nodeValue;
 
-                        if (value !== undefined && initialisedAssetJson.metadata[uid] !== undefined) {
+                        if (value !== undefined && initialisedAssetJson[uid] !== undefined) {
                             let itemchildnodes = Array.from(fieldvalue.childNodes)
 
                             if (itemchildnodes.length > 3) { // manage fields with more than one value
@@ -91,7 +91,7 @@ module.exports.readXml = function readXml(inputXmlPath) {
                                     }
                                 })
                             }
-                            initialisedAssetJson.metadata[uid].value = value;
+                            initialisedAssetJson[uid].value = value;
                         }
                     }
                 });
