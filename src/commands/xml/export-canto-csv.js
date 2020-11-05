@@ -25,7 +25,7 @@ class ExportCantoCsvCommand extends BaseCommand {
         } = newFlags;
 
         // setup logger
-        const log = Utils.getLogger(logFile);
+        const log = Utils.getLogger(logFile,false);
 
         const cantoJson = CantoParser.readXml(inputxml);
         log.info(`Parsing the Canto xml file "${inputxml}"`);

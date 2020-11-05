@@ -39,12 +39,14 @@ module.exports.trimRight = function trimRight(toTrim, charArray) {
     return toTrim;
 }
 
-module.exports.getLogger = function getLogger(logFile) {
+module.exports.getLogger = function getLogger(logFile, disable) {
     const { combine, timestamp, label, printf } = winston.format;
     const myFormat = printf(({ level, message, label, timestamp }) => {
         return `${timestamp} [${label}] ${level}: ${message}`;
     });
-    const log = winston.createLogger({
+    const isSilent = (typeof disable !== 'undefined' && disable != false) ? true : false; //default to false if not set
+
+    let logOptions = {
         format: combine(
             label({ label: '' }),
             timestamp(),
@@ -52,9 +54,16 @@ module.exports.getLogger = function getLogger(logFile) {
         ),
         transports: [
             new winston.transports.Console(),
-            new winston.transports.File({ filename: logFile }) // output to file
-        ]
-    });
+        ],
+        silent: isSilent
+    }
+
+    if (!isSilent) {
+        // output to file
+        logOptions.transports.push(new winston.transports.File({ filename: logFile }));
+    }
+
+    const log = winston.createLogger(logOptions);
     return log;
 }
 
