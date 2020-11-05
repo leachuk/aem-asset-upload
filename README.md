@@ -5,7 +5,9 @@ This is a fork of https://github.com/adobe/aio-cli-plugin-aem
 Which is built with https://github.com/adobe/aem-upload
 
 ## Sample Commands
-### AEM Asset Upload
+### upload-csv. 
+AEM Asset Upload via a CSV file
+
 Upload of asset via nodejs
 ```
 node bin/run aem:upload-csv -h https://<aem-hostname> -c jh-upload-service-account:<password> -i /path/to/upload.csv
@@ -15,9 +17,16 @@ Via compiled binary
 ./aem-asset-upload aem:upload-csv -h https://<aem-hostname> -c jh-upload-service-account:<password> -i /path/to/upload.csv
 ```
 
-### XML export transform
+### export-canto-csv. 
+Transform the Canto exported XML file to a CSV format for use in the `-i` argument by the above `upload-csv` command
+
+Command flags:
+- `--inputxml` or `-i`. Set the path to the Canto exported xml file which contains the asset metadata.
+- `--outputcsv` or `-o`. Set the path and filename for the migrated CSV file for use in the `upload-csv` command.
+- `--targetfolder` or `-t`. Set the path to the AEM DAM folder which will be added to the `aem_target_folder` column of the CSV file.
+- `--log` or `-l`. The path and filename for the debug log file.
 ```
-node bin/run xml:export-canto-csv
+node bin/run xml:export-canto-csv -i "/Users/stewart.leach/project/john-holland/support/Sample Data/Canto XML Export Amaroo Main Sewer Project 5 Items.xml"
 ```
 
 ## CSV Schema Requirements
