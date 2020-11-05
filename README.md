@@ -79,4 +79,5 @@ Note: In the `--targets` command used to create the executable we can specify th
 Then run the binary version like:
 ```
 ./aem-asset-upload aem:upload-csv -h https://<aem-hostname> -c jh-upload-service-account:<password> -i /path/to/upload.csv
+./aem-asset-upload xml:export-canto-csv -i "/path/to/canto xml export.xml"
 ```
