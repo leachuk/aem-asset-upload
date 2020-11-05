@@ -60,7 +60,7 @@ module.exports.readXml = function readXml(inputXmlPath) {
         let childnodes = Array.from(node.childNodes)
         childnodes.forEach(item => {
             if (item.nodeType == 1) {
-                let initialisedAssetJson = assetjson;
+                let initialisedAssetJson = JSON.parse(JSON.stringify(assetjson)); // Create a deep copy to prevent reference updates
                 let fieldValueNodes = Array.from(item.childNodes)
                 fieldValueNodes.forEach(fieldvalue => {
                     if (fieldvalue.nodeType == 1) {
