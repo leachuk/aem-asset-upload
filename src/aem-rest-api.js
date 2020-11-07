@@ -61,6 +61,25 @@ class AemRestApi {
         }
         return aemMetadata;
     }
+
+    /*
+     * For managing AEM specific data transformations.
+     * E.g. Convert comma separated values into a string array
+     */
+    formatAemData(dataObj) {
+        let aemFormatedObj = {};
+        Object.keys(dataObj).forEach(key => {
+            console.log(key + ' - ' + dataObj[key]) // key - value
+            let value = dataObj[key];
+            if (value.indexOf(',') > -1) {
+                value = value.split(',');
+            }
+            aemFormatedObj[key] = value;
+        })
+
+        return aemFormatedObj
+    }
+
 }
 
 function _request(method, url, username, password, data) {

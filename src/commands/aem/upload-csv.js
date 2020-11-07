@@ -171,6 +171,7 @@ class UploadCommand extends BaseCommand {
                 //If an upload failed, retry
                 let filename = file.fileName;
                 let metadata = CsvParser.filterNonMetadata(csvData[dataindex]); //remove the non-metadata fields
+                metadata = aemApi.formatAemData(metadata);
                 let aemMetadata = aemApi.getAemApiMetadata(metadata);
                 let aemfileNamePath = targetFolder + '/' + filename;
                 log.info("AEM Metadata with CSV extracted data");
@@ -203,6 +204,7 @@ class UploadCommand extends BaseCommand {
                                         });
                                     } else {
                                         log.info(`RETRY no metadata to set on url ${url}`);
+                                        CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum); //Set uploaded flag to true as we're done
                                     }
                                 } else {
                                     log.info("RETRY FAILED");
@@ -227,6 +229,7 @@ class UploadCommand extends BaseCommand {
                         });
                     } else {
                         log.info(`RETRY no metadata to set on url ${url}`);
+                        CsvParser.setUploadedCell(inputcsv, csvData[dataindex].csvRowNum); //Set uploaded flag to true as we're done
                     }
                 }
             })
