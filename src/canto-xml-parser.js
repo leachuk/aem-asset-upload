@@ -91,6 +91,14 @@ module.exports.readXml = function readXml(inputXmlPath) {
                                     }
                                 })
                             }
+                            /*
+                             * Some exported Canto fields, e.g. Keywords, contain a HTML encoded line feed character `&#xa;`
+                             * This is translated to a newline character `/n` by the XML parsing library.
+                             * We convert it here to a comma ',' here as the newline characters break our CSV format.
+                             */
+                            if (value.indexOf('\n') > -1){
+                                value = value.replaceAll('\n', ',');
+                            }
                             initialisedAssetJson[uid].value = value;
                         }
                     }
