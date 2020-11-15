@@ -2,6 +2,7 @@ if(typeof require !== 'undefined') XLSX = require('xlsx');
 const {flags} = require('@oclif/command');
 const BaseCommand = require('../../base-command');
 const Utils = require('../../utils');
+const JHRules = require('../../john-holland-rules');
 const CantoParser = require('../../canto-xml-parser');
 
 class ExportCantoCsvCommand extends BaseCommand {
@@ -50,6 +51,13 @@ class ExportCantoCsvCommand extends BaseCommand {
             csvArray.push(rowJson);
         }
         //console.log(csvArray);
+
+        /*
+         * John Holland temp rules until we have a better way of abstracting out.
+         * Set aem_target_folder according to business rules for priorities of where the asset
+         * should be saved in AEM, depending on the canto metadata values
+         */
+        csvArray = JHRules.setTargetFolder(csvArray);
 
         let csvHeaderArray = [];
         for (let field in csvArray[0]) {
