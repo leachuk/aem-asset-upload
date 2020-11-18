@@ -45,8 +45,13 @@ class ExportCantoCsvCommand extends BaseCommand {
                 if (cantoJson[key][field].name == "OAR") {
                     delete Object.assign(rowJson, {['filepath']: rowJson['OAR'] })['OAR'];
                 }
-                // Insert aem_target_folder default from arg flag
-                rowJson['aem_target_folder'] = targetfolder;
+                // Insert aem_target_folder from category JH business rules, or default from arg flag if not managed by the business rules
+                if (cantoJson[key][field].name == "Categories") {
+                    rowJson['aem_target_folder'] = JHRules.setTargetFolder(cantoJson[key][field].value);
+                    if (rowJson['aem_target_folder'] == "") {
+                        rowJson['aem_target_folder'] = targetfolder;
+                    }
+                }
             }
             csvArray.push(rowJson);
         }
@@ -57,7 +62,7 @@ class ExportCantoCsvCommand extends BaseCommand {
          * Set aem_target_folder according to business rules for priorities of where the asset
          * should be saved in AEM, depending on the canto metadata values
          */
-        csvArray = JHRules.setTargetFolder(csvArray);
+        //csvArray = JHRules.setTargetFolder(csvArray);
 
         let csvHeaderArray = [];
         for (let field in csvArray[0]) {
