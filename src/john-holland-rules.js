@@ -78,7 +78,7 @@ function _convertCategoryArrayToPath(categoryArray) {
     let path = "";
     if (Array.isArray(categoryArray) && categoryArray.length > 0) {
         let arrayToString = categoryArray.slice(1, categoryArray.length).toString();
-        path = arrayToString.replace(",", "/");
+        path = arrayToString.replaceAll(",", "/");
     }
 
     return path;
