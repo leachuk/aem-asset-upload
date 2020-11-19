@@ -51,6 +51,10 @@ class ExportCantoCsvCommand extends BaseCommand {
                     if (rowJson['aem_target_folder'] == "") {
                         rowJson['aem_target_folder'] = targetfolder;
                     }
+                    // Now that the categories array has been parsed, convert it to a comma separated string for saving to CSV
+                    let categoriesArray = cantoJson[key][field].value;
+                    let categoriesString = categoriesArray.slice(0, categoriesArray.length).toString();
+                    rowJson[cantoJson[key][field].name] = categoriesString.replaceAll('$Categories:', '');
                 }
             }
             csvArray.push(rowJson);
