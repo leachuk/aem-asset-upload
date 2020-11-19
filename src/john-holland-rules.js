@@ -20,7 +20,10 @@ module.exports.setTargetFolder = function setTargetFolder(dataArray) {
         if (!Array.isArray(dataArray)) { // force as an array incase of single value so later forEach loops work
             dataArray = [dataArray];
         }
-        aemTargetFolder = johnHollandDamRoot + "/" + _getAemTargetFolderFromCategories(dataArray);
+        let categoryAemPath = _getAemTargetFolderFromCategories(dataArray);
+        if (categoryAemPath != "") {
+            aemTargetFolder = johnHollandDamRoot + "/" + _getAemTargetFolderFromCategories(dataArray);
+        }
     }
 
     return aemTargetFolder.toLowerCase();
@@ -47,11 +50,15 @@ function _getAemTargetFolderFromCategories(categoriesArray) {
                 let categoryItem = category[1];
                 // todo: work through why priority order isn't adhered to.
                 //for (let j = 0; j < categoryByPriority.length; j++) {
-                    if ( (priorityArray.length == 0 && categoryByPriority.indexOf(categoryItem) > -1) || (categoryByPriority.indexOf(categoryItem) > -1 && categoryByPriority.indexOf(categoryItem) < categoryByPriority.indexOf(_getCategoryFromPath(priorityArray[0]))) ) {
-                         // if we have multiple occurrences of the same category, select the longest
-                            path = _convertCategoryArrayToPath(category);
-                            priorityArray.unshift(path);
-                            //break;
+                    if (path.length == 0 && categoryByPriority.indexOf(categoryItem) > -1) {
+                        //set initial value if empty
+                        path = _convertCategoryArrayToPath(category);
+                    }else if ( categoryByPriority.indexOf(categoryItem) > -1 && categoryByPriority.indexOf(categoryItem) < categoryByPriority.indexOf(_getCategoryFromPath(path)) ) {
+                        // if category is prioritised ahead of current category in the path
+                        path = _convertCategoryArrayToPath(category);
+                    } else if ( categoryByPriority.indexOf(categoryItem) > -1 && _convertCategoryArrayToPath(category).length > path.length && categoryByPriority.indexOf(categoryItem) == categoryByPriority.indexOf(_getCategoryFromPath(path)) ) {
+                        // if we have multiple occurrences of the same category, select the longest
+                        path = _convertCategoryArrayToPath(category);
                     }
                 //}
             //
@@ -80,6 +87,8 @@ function _convertCategoryArrayToPath(categoryArray) {
 function _getCategoryFromPath(path) {
     if (typeof path !== 'undefined' && path.indexOf("/") > 0) {
         return path.split("/")[0]
+    } else if (path.length > 0 ) {
+        return path; // Is a single root path with no child folders, so return
     } else {
         return "";
     }
