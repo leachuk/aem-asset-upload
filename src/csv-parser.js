@@ -78,3 +78,38 @@ module.exports.getTargetFolder = function getTargetFolder(jsonObject) {
 module.exports.getFilePath = function getFilePath(jsonObject) {
 	return jsonObject.filepath;
 }
+
+/*
+ * Map the metadata headings from their data source values to AEM friendly values
+ * The input CSV file takes the format `from,to`. The value in the `from` column is replaced by the value in `to`
+ */
+module.exports.metadataJsonMapper = function metadataJsonMapper(csvPath, metadataObj, defaultLowerCaseMatch) {
+	if (csvPath) {
+		const workbook = XLSX.readFile(csvPath);
+		let json = XLSX.utils.sheet_to_json(workbook.Sheets.Sheet1, { defval: 'empty' });
+
+		Object.entries(json).forEach(function([key,value],index) {
+			value.csvRowNum = value.__rowNum__;
+		})
+
+		json.forEach( row => {
+			let from = row.from;
+			let to = row.to;
+
+			console.log(metadataObj);
+			if (defaultLowerCaseMatch) {
+				if (metadataObj.hasOwnProperty(from.toLowerCase())) {
+					metadataObj[to] = metadataObj[from.toLowerCase()];
+					delete metadataObj[from.toLowerCase()];
+				}
+			} else {
+				if (metadataObj.hasOwnProperty(from)) {
+					metadataObj[to] = metadataObj[from];
+					delete metadataObj[from];
+				}
+			}
+		})
+	} else {
+		log.info("Error: Missing file path or invalid input Array\n");
+	}
+}

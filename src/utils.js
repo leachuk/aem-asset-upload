@@ -144,3 +144,15 @@ module.exports.arraymove = function arraymove(arr, fromIndex, toIndex) {
 
     return arr;
 }
+
+module.exports.convertJsonKeysToLowerCase = function convertJsonKeysToLowerCase(json) {
+    let newJson = {};
+    Object.entries(json).forEach(
+        ([key, value]) => {
+            let lowerCaseKey = key.toLowerCase();
+            newJson[lowerCaseKey] = value;
+        }
+    );
+
+    return newJson;
+}

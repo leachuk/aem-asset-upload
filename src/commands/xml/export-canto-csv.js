@@ -4,11 +4,13 @@ const BaseCommand = require('../../base-command');
 const Utils = require('../../utils');
 const JHRules = require('../../john-holland-rules');
 const CantoParser = require('../../canto-xml-parser');
+const CsvParser = require('../../csv-parser');
+const fs = require('fs')
 
 class ExportCantoCsvCommand extends BaseCommand {
     async doRun(args) {
         const {flags, argv} = args;
-
+        const mappingsFile = 'metadata-mapping.csv';
         const newFlags = Object.assign({}, flags);
         const timestamp = new Date().getTime();
         Object.keys(newFlags).forEach(key => {
@@ -47,6 +49,11 @@ class ExportCantoCsvCommand extends BaseCommand {
                 }
                 // Insert aem_target_folder from category JH business rules, or default from arg flag if not managed by the business rules
                 if (cantoJson[key][field].name == "Categories") {
+                    /*
+                     * John Holland temp rules until we have a better way of abstracting out.
+                     * Set aem_target_folder according to business rules for priorities of where the asset
+                     * should be saved in AEM, depending on the canto metadata values
+                     */
                     rowJson['aem_target_folder'] = JHRules.setTargetFolder(cantoJson[key][field].value);
                     if (rowJson['aem_target_folder'] == "") {
                         rowJson['aem_target_folder'] = targetfolder;
@@ -57,16 +64,14 @@ class ExportCantoCsvCommand extends BaseCommand {
                     rowJson[cantoJson[key][field].name] = categoriesString.replaceAll('$Categories:', '');
                 }
             }
-            csvArray.push(rowJson);
-        }
-        //console.log(csvArray);
 
-        /*
-         * John Holland temp rules until we have a better way of abstracting out.
-         * Set aem_target_folder according to business rules for priorities of where the asset
-         * should be saved in AEM, depending on the canto metadata values
-         */
-        //csvArray = JHRules.setTargetFolder(csvArray);
+            let lowerCaseRowJson = Utils.convertJsonKeysToLowerCase(rowJson);
+            if (fs.existsSync(mappingsFile)) {
+                // Update metadata headings to be AEM friendly
+                CsvParser.metadataJsonMapper(mappingsFile, lowerCaseRowJson, true);
+            }
+            csvArray.push(lowerCaseRowJson);
+        }
 
         let csvHeaderArray = [];
         for (let field in csvArray[0]) {
@@ -85,7 +90,6 @@ class ExportCantoCsvCommand extends BaseCommand {
         log.info(`Exporting converted Canto data to "${outputcsv}"`);
     }
 }
-
 
 ExportCantoCsvCommand.flags = Object.assign({}, BaseCommand.flags, {
     inputxml: flags.string({
