@@ -156,3 +156,7 @@ module.exports.convertJsonKeysToLowerCase = function convertJsonKeysToLowerCase(
 
     return newJson;
 }
+
+module.exports.isJsonEmpty = function isJsonEmpty(json) {
+    return Object.keys(json).length === 0 && json.constructor === Object
+}

@@ -80,19 +80,29 @@ module.exports.getFilePath = function getFilePath(jsonObject) {
 }
 
 /*
- * Map the metadata headings from their data source values to AEM friendly values
  * The input CSV file takes the format `from,to`. The value in the `from` column is replaced by the value in `to`
+ * The resulting json is then used by the below `metadataJsonMapper` function
+ * This has been split out so we aren't reading the mapping file within a loop
  */
-module.exports.metadataJsonMapper = function metadataJsonMapper(csvPath, metadataObj, defaultLowerCaseMatch) {
+module.exports.getMetadataMappingJson = function getMetadataMappingJson(csvPath) {
+	let json = {};
 	if (csvPath) {
 		const workbook = XLSX.readFile(csvPath);
-		let json = XLSX.utils.sheet_to_json(workbook.Sheets.Sheet1, { defval: 'empty' });
+		json = XLSX.utils.sheet_to_json(workbook.Sheets.Sheet1, {defval: 'empty'});
 
-		Object.entries(json).forEach(function([key,value],index) {
+		Object.entries(json).forEach(function ([key, value], index) {
 			value.csvRowNum = value.__rowNum__;
 		})
+	}
 
-		json.forEach( row => {
+	return json;
+}
+/*
+ * Map the metadata headings from their data source values to AEM friendly values
+ */
+module.exports.metadataJsonMapper = function metadataJsonMapper(mappingJson, metadataObj, defaultLowerCaseMatch) {
+	if (mappingJson) {
+		mappingJson.forEach( row => {
 			let from = row.from;
 			let to = row.to;
 
@@ -110,6 +120,7 @@ module.exports.metadataJsonMapper = function metadataJsonMapper(csvPath, metadat
 			}
 		})
 	} else {
-		log.info("Error: Missing file path or invalid input Array\n");
+		log.error("Error: reading metadata mapping json for the below object\n");
+		log.error(metadataObj);
 	}
 }

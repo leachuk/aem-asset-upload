@@ -33,6 +33,13 @@ class ExportCantoCsvCommand extends BaseCommand {
         const cantoJson = CantoParser.readXml(inputxml);
         log.info(`Parsing the Canto xml file "${inputxml}"`);
 
+        let metadataMappingJson = {};
+        if (fs.existsSync(mappingsFile)) {
+            // Get the mapping json from file for later use
+            metadataMappingJson = CsvParser.getMetadataMappingJson(mappingsFile);
+            log.info(`Metadata mapping file in use at "${mappingsFile}"`);
+        }
+
         // Convert to XSLX friendly format so it can be saved as CSV
         let csvArray = [];
         for (let key in cantoJson) {
@@ -60,15 +67,17 @@ class ExportCantoCsvCommand extends BaseCommand {
                     }
                     // Now that the categories array has been parsed, convert it to a comma separated string for saving to CSV
                     let categoriesArray = cantoJson[key][field].value;
-                    let categoriesString = categoriesArray.slice(0, categoriesArray.length).toString();
-                    rowJson[cantoJson[key][field].name] = categoriesString.replaceAll('$Categories:', '');
+                    if (Array.isArray(categoriesArray)) {
+                        let categoriesString = categoriesArray.slice(0, categoriesArray.length).toString();
+                        rowJson[cantoJson[key][field].name] = categoriesString.replaceAll('$Categories:', '');
+                    }
                 }
             }
 
             let lowerCaseRowJson = Utils.convertJsonKeysToLowerCase(rowJson);
-            if (fs.existsSync(mappingsFile)) {
+            if (!Utils.isJsonEmpty(metadataMappingJson)) {
                 // Update metadata headings to be AEM friendly
-                CsvParser.metadataJsonMapper(mappingsFile, lowerCaseRowJson, true);
+                CsvParser.metadataJsonMapper(metadataMappingJson, lowerCaseRowJson, true);
             }
             csvArray.push(lowerCaseRowJson);
         }
