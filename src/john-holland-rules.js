@@ -48,7 +48,7 @@ function _getAemTargetFolderFromCategories(categoriesArray) {
         path = _convertCategoryArrayToPath(categoriesArray);
     }
 
-    return path;
+    return _renamePathFolder(path);
 }
 
 function _convertCategoryArrayToPath(categoryArray) {
@@ -73,5 +73,22 @@ function _getCategoryFromPath(path) {
     } else {
         return "";
     }
+}
 
+/**
+ *
+ * To cover initial usecase of renaming `People (by role)` and `People (by name)` to `People`, but can be extended
+ *
+ */
+function _renamePathFolder(path) {
+    let renamedPath = "";
+    const renamePeopleFrom = [ "People (by name)", "People (by role)"]
+    const renamePeopleTo = "People"
+    renamePeopleFrom.forEach( item => {
+        if (path.indexOf(item) > -1) {
+            renamedPath = path.replaceAll(item, renamePeopleTo);
+        }
+    })
+
+    return renamedPath.length > 0 ? renamedPath : path;
 }
