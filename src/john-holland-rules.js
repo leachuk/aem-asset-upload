@@ -31,28 +31,29 @@ function _getAemTargetFolderFromCategories(categoriesArray) {
         categoriesArray.forEach( item => {
             let category = item.split(categorySeparator);
             console.log(category);
-                let categoryItem = category[1];
+            let categoryItem = category[1];
 
-                if (path.length == 0 && categoryByPriority.indexOf(categoryItem) > -1) {
-                    // set initial value if empty
-                    path = _convertCategoryArrayToPath(category);
-                }else if ( categoryByPriority.indexOf(categoryItem) > -1 && categoryByPriority.indexOf(categoryItem) < categoryByPriority.indexOf(_getCategoryFromPath(path)) ) {
-                    // if category is prioritised ahead of current category in the path
-                    path = _convertCategoryArrayToPath(category);
-                } else if ( categoryByPriority.indexOf(categoryItem) > -1 && _convertCategoryArrayToPath(category).length > path.length && categoryByPriority.indexOf(categoryItem) == categoryByPriority.indexOf(_getCategoryFromPath(path)) ) {
-                    // if we have multiple occurrences of the same category, select the longest
-                    path = _convertCategoryArrayToPath(category);
-                }
+            if (path.length == 0 && categoryByPriority.indexOf(categoryItem) > -1) {
+                // set initial value if empty
+                path = _convertCategoryArrayToPath(category);
+            }else if ( categoryByPriority.indexOf(categoryItem) > -1 && categoryByPriority.indexOf(categoryItem) < categoryByPriority.indexOf(_getCategoryFromPath(path)) ) {
+                // if category is prioritised ahead of current category in the path
+                path = _convertCategoryArrayToPath(category);
+            } else if ( categoryByPriority.indexOf(categoryItem) > -1 && _convertCategoryArrayToPath(category).length > path.length && categoryByPriority.indexOf(categoryItem) == categoryByPriority.indexOf(_getCategoryFromPath(path)) ) {
+                // if we have multiple occurrences of the same category, select the longest
+                path = _convertCategoryArrayToPath(category);
+            }
         })
     } else if (typeof categoriesArray !== "undefined") {
         path = _convertCategoryArrayToPath(categoriesArray);
     }
 
-    return _renamePathFolder(path);
+    return _renamePathFolder(unescape(path));
 }
 
 function _convertCategoryArrayToPath(categoryArray) {
     let path = "";
+    categoryArray = _escapeCharsInArray(categoryArray);
     if (typeof categoryArray !== "undefined" && Array.isArray(categoryArray) && categoryArray.length > 0) { // handle multiple items in an array
         let arrayToString = categoryArray.slice(1, categoryArray.length).toString();
         path = arrayToString.replaceAll(",", "/");
@@ -91,4 +92,15 @@ function _renamePathFolder(path) {
     })
 
     return renamedPath.length > 0 ? renamedPath : path;
+}
+
+function _escapeCharsInArray(array) {
+    let escapedArray = [];
+
+    array.forEach( item => {
+        let escapedItem = escape(item);
+        escapedArray.push(escapedItem);
+    })
+
+    return escapedArray;
 }
