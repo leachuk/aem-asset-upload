@@ -106,7 +106,7 @@ module.exports.metadataJsonMapper = function metadataJsonMapper(mappingJson, met
 			let from = row.from;
 			let to = row.to;
 
-			console.log(metadataObj);
+			//console.log(metadataObj);
 			if (defaultLowerCaseMatch) {
 				if (metadataObj.hasOwnProperty(from.toLowerCase())) {
 					metadataObj[to] = metadataObj[from.toLowerCase()];

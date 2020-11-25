@@ -30,7 +30,7 @@ function _getAemTargetFolderFromCategories(categoriesArray) {
     if (typeof categoriesArray !== "undefined" && categoriesArray.length > 0) {
         categoriesArray.forEach( item => {
             let category = item.split(categorySeparator);
-            console.log(category);
+            //console.log(category);
             let categoryItem = category[1];
 
             if (path.length == 0 && categoryByPriority.indexOf(categoryItem) > -1) {
