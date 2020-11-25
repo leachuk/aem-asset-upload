@@ -64,6 +64,30 @@ filepath,uploaded,aem_target_folder,metadata_field_1,metadata_field_2
 /path/to/file/file2.tif,,/content/dam/jh/example-folder-2,value1_b,value2_b
 ```
 
+### Metadata Mapping
+To enable changing the metadata field names from the source value to some other value (for example, if you want to populate a pre-existing AEM metadata field) you can create a `metadata-mapping.csv` file.
+This should live at the root of the executable. 
+
+If it exists, the metadata headings (as described above under `Optional Headings`) will be transformed to the value in the `to` column.
+
+If the `metadata-mapping.csv` isn't available at the root, then no mapping will be attempted.
+
+**Note.** Currently, it only maps to the default AEM metadata location of `jcr:content/metadata/<name>`.
+
+The format should look like:
+| from             | to               |
+|------------------|------------------|
+| Approval (Corp.) | approval-corp    |
+| Asset Name       | asset-identifier |
+|                  |                  |
+
+Which viewed as a text file would look like:
+```
+from,to
+Approval (Corp.),approval-corp
+Asset Identifier,asset-identifier
+```
+
 ## Binary packaging
 Packaging the node app to a single binary executable using https://github.com/vercel/pkg
 
