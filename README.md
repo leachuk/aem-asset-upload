@@ -105,3 +105,66 @@ Then run the binary version like:
 ./aem-asset-upload aem:upload-csv -h https://<aem-hostname> -c jh-upload-service-account:<password> -i /path/to/upload.csv
 ./aem-asset-upload xml:export-canto-csv -i "/path/to/canto xml export.xml"
 ```
+
+## Manual Steps
+When dealing with AEM Assets, there may be some additional configurations or manual steps that will help resolve bugs or prevent issues. 
+These are captured here until a more programmatic fix can be provided.
+
+### Asset metadata title syncing 
+You will probably want to update the assets title as part of the metadata mapping. By default AEM will display the value of `dc:title` as the title.
+
+Attempting to set this directly via the Assets Api (which this tool uses), for some reason I'm sure Adobe understand, causes the `jcr:title` to be updated instead.
+
+This results in an unchanged title being displayed for the asset. 
+This behaviour is documented at https://experienceleague.adobe.com/docs/experience-manager-64/assets/extending/mac-api-assets.html?lang=en#update-asset-metadata
+
+Follow these steps to create a workflow which syncs the `jcr:title` to `dc:title` to resolve this issue.
+
+1. Create a workflow script, can have the extension .js, or .ecma (which appears to be the AEM standard, but either work)
+  1. Save it in crx/de as a file under `/etc/workflow/scripts`. It can also probably be saved under `/apps/<project>/workflow/scripts` when added to a code repo, but I haven't tried this yet. Details from https://helpx.adobe.com/au/experience-manager/6-2/sites/developing/using/wf-customizing-extending.html
+```
+# This is a fixed version of the script provided by the Adobe documentation
+# https://experienceleague.adobe.com/docs/experience-manager-64/assets/extending/mac-api-assets.html?lang=en#update-asset-metadata
+#
+var workflowData = workItem.getWorkflowData();
+log.info("JH Content Sync executing script now...");
+if (workflowData.getPayloadType() == "JCR_PATH") {
+  var path = workflowData.getPayload().toString();
+  log.info("JH Path at:" + path);
+  var node = workflowSession.getSession().getItem(path);
+  var metadataNode = node.getNode("metadata");
+      if (metadataNode.hasProperty("jcr:title")) {
+          var jcrTitle = metadataNode.getProperty("jcr:title");
+          log.info("JH jcrTitle 2:" + jcrTitle.getString());
+          metadataNode.setProperty("dc:title", jcrTitle.getString());
+          metadataNode.save();
+      }
+}
+```
+2. Create a new Workflow Model
+  1. Add a new `Process Step` (filter with "process step" and it will show up) component.
+  2. Edit the Process Step component. Set a title and description in the Common tab (leave everything else) and in the Process tab select our custom workflow from the dropdown (this was previously added). Select the `Handler Advance` checkbox. Select Done.
+  3. Select the `Sync` button on the model.
+3. Create a new Workflow Launcher so the model is automatically processed when an Asset is modified (in our case, it's metadata is updated).
+  1. Select Create > Add Launcher. Populate the following, all other fields can be left blank/default
+    1. Event Type = Modified
+    2. Nodetype = dam:AssetContent
+    3. Path = /content/dam(/.*)/jcr:content
+    4. Workflow = <Our new Workflow Model from above>
+    5. Description = <Some description>
+    6. Active = selected/checked
+
+Our custom script should then activate each time we update the asset metatdata
+E.g.
+```
+curl -X PUT -u admin:admin -H "Content-Type: application/json;" -d '{"class":"asset", "properties": {"metadata":{"jcr:title":"Also Working Title"}}}' http://localhost:4502/api/assets/wknd/en/activities/hiking/hiker-anapurna.jpg
+```
+
+Tail the `error.log` and you'll see our `log.info(...)` output from the .ecma script.
+
+### Clear ecma workflow scripts from cache
+When working with custom ecma scripts which we've added to a workflow step, you'll need to clear it from this cache each time it's updated in crx/de
+
+`http://localhost:4502/system/console/scriptcache`
+
+Not doing this means any updates to the script aren't executed.
