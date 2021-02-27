@@ -1,5 +1,7 @@
 # aem-asset-upload
-For bulk uploading of asset files to AEM using a CSV file
+For bulk uploading of asset files to AEM using a CSV file to enable uploading from a local file system. 
+Also includes support for bulk metadata mapping using the Assets API via the CSV file. 
+A Canto metadata exporter is also provided, which will pre-populate your export CSV file.
 
 This is a fork of https://github.com/adobe/aio-cli-plugin-aem
 Which is built with https://github.com/adobe/aem-upload
